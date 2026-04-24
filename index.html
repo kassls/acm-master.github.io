@@ -3,88 +3,110 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>ACMer 核心控制台 - 究极形态</title>
+  <title>ACMer 核心控制台 - 赛博飞升版</title>
   
-  <!-- Tailwind CSS & Typography (用于 Markdown 排版) -->
   <script src="https://cdn.tailwindcss.com?plugins=typography"></script>
-  <!-- Babel -->
   <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
-  <!-- Marked.js (Markdown 解析) -->
   <script src="https://cdn.jsdelivr.net/npm/marked/marked.min.js"></script>
   
-  <!-- Highlight.js (代码高亮) -->
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.8.0/styles/dracula.min.css">
   <script src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.8.0/highlight.min.js"></script>
 
-  <!-- MathJax (LaTeX 数学公式渲染) -->
   <script>
     MathJax = {
       tex: { inlineMath: [['$', '$'], ['\\(', '\\)']], displayMath: [['$$', '$$'], ['\\[', '\\]']] },
-      startup: { typeset: false } // 手动触发渲染
+      startup: { typeset: false }
     };
   </script>
   <script id="MathJax-script" async src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-mml-chtml.js"></script>
 
   <style>
+    @import url('https://fonts.googleapis.com/css2?family=Rajdhani:wght@500;700;900&display=swap');
+
     /* 全局滚动条美化 */
-    ::-webkit-scrollbar { width: 8px; height: 8px; }
-    ::-webkit-scrollbar-track { background: rgba(0, 0, 0, 0.6); }
-    ::-webkit-scrollbar-thumb { background: rgba(6, 182, 212, 0.6); border-radius: 4px; }
-    ::-webkit-scrollbar-thumb:hover { background: rgba(239, 68, 68, 0.8); }
+    ::-webkit-scrollbar { width: 6px; height: 6px; }
+    ::-webkit-scrollbar-track { background: rgba(0, 0, 0, 0.8); }
+    ::-webkit-scrollbar-thumb { background: rgba(6, 182, 212, 0.8); border-radius: 0px; }
+    ::-webkit-scrollbar-thumb:hover { background: rgba(239, 68, 68, 1); }
 
-    /* 炫酷彩色动态流光背景 */
-    @keyframes colorFlow {
-      0% { background-position: 0% 50%; }
-      50% { background-position: 100% 50%; }
-      100% { background-position: 0% 50%; }
+    /* 科幻字体应用于关键标题 */
+    .font-sci-fi { font-family: 'Rajdhani', sans-serif; }
+
+    /* === 瞬间爆发特效动画 === */
+    @keyframes screen-flash {
+      0% { opacity: 1; background: #ffffff; }
+      10% { opacity: 0.8; background: #ff2a2a; }
+      100% { opacity: 0; background: transparent; }
     }
-    .colorful-overlay {
-      background: linear-gradient(-45deg, rgba(255, 0, 128, 0.15), rgba(0, 204, 255, 0.15), rgba(0, 255, 128, 0.15), rgba(255, 204, 0, 0.15));
-      background-size: 400% 400%;
-      animation: colorFlow 10s ease infinite;
+    @keyframes shockwave-expand {
+      0% { transform: scale(0); opacity: 1; border-width: 50px; }
+      100% { transform: scale(10); opacity: 0; border-width: 0px; }
+    }
+    .animate-flash { animation: screen-flash 1.5s cubic-bezier(0.16, 1, 0.3, 1) forwards; }
+    .animate-shockwave {
+      position: fixed; top: 50%; left: 50%;
+      width: 20vw; height: 20vw; margin-top: -10vw; margin-left: -10vw;
+      border: 0px solid rgba(255, 50, 50, 0.8);
+      border-radius: 50%; pointer-events: none; z-index: 9999;
+      animation: shockwave-expand 1.2s cubic-bezier(0.1, 0.8, 0.3, 1) forwards;
     }
 
-    @keyframes hyper-glow {
-      0%, 100% { box-shadow: 0 0 50px rgba(239, 68, 68, 0.6), inset 0 0 30px rgba(239, 68, 68, 0.4); border-color: rgba(255,50,50,0.8); }
-      50% { box-shadow: 0 0 100px rgba(239, 68, 68, 1), inset 0 0 60px rgba(239, 68, 68, 0.8); border-color: rgba(255,150,150,1); }
+    /* === HUD 面板样式 === */
+    .hud-panel {
+      background: linear-gradient(135deg, rgba(15, 20, 30, 0.8) 0%, rgba(5, 10, 15, 0.95) 100%);
+      backdrop-filter: blur(10px);
+      border: 1px solid rgba(6, 182, 212, 0.3);
+      position: relative;
     }
-    .animate-hyper-glow { animation: hyper-glow 1s ease-in-out infinite; }
-    
-    /* 极致毛玻璃面板 */
-    .glass-panel {
-      background: rgba(10, 15, 25, 0.75);
-      backdrop-filter: blur(20px);
-      -webkit-backdrop-filter: blur(20px);
-      border: 1px solid rgba(255, 255, 255, 0.1);
-      box-shadow: 0 10px 40px rgba(0, 0, 0, 0.8);
+    /* HUD 切角特效 */
+    .hud-clip {
+      clip-path: polygon(0 0, calc(100% - 20px) 0, 100% 20px, 100% 100%, 20px 100%, 0 calc(100% - 20px));
     }
-    
-    /* MD 阅读舱专属毛玻璃 - 显著提升通透度与色彩饱和度 */
+    .hud-clip-red {
+      border-color: rgba(239, 68, 68, 0.6);
+      box-shadow: 0 0 30px rgba(239, 68, 68, 0.2) inset;
+    }
+
+    /* 能量槽斜纹动画 */
+    @keyframes progress-stripes {
+      0% { background-position: 0 0; }
+      100% { background-position: 40px 0; }
+    }
+    .energy-bar-stripes {
+      background-image: linear-gradient(45deg, rgba(255,255,255,0.15) 25%, transparent 25%, transparent 50%, rgba(255,255,255,0.15) 50%, rgba(255,255,255,0.15) 75%, transparent 75%, transparent);
+      background-size: 40px 40px;
+      animation: progress-stripes 1s linear infinite;
+    }
+
+    /* 背景网格扫描线 */
+    .scanlines {
+      background: linear-gradient(to bottom, rgba(255,255,255,0), rgba(255,255,255,0) 50%, rgba(0,0,0,0.1) 50%, rgba(0,0,0,0.1));
+      background-size: 100% 4px;
+      position: absolute; inset: 0; pointer-events: none; opacity: 0.3;
+    }
+
+    /* MD 阅读舱专属毛玻璃 */
     .reader-glass {
-      background: rgba(15, 25, 45, 0.35);
-      backdrop-filter: blur(25px) saturate(150%);
-      -webkit-backdrop-filter: blur(25px) saturate(150%);
-      border: 1px solid rgba(255, 255, 255, 0.15);
-      box-shadow: 0 8px 32px 0 rgba(0, 0, 0, 0.37);
+      background: rgba(10, 15, 25, 0.4);
+      backdrop-filter: blur(25px) saturate(180%);
+      -webkit-backdrop-filter: blur(25px) saturate(180%);
+      border: 1px solid rgba(255, 255, 255, 0.1);
+      box-shadow: 0 8px 32px 0 rgba(0, 0, 0, 0.5);
     }
 
     /* Markdown 内部排版优化 */
     .prose pre { 
-      background: rgba(0, 0, 0, 0.4) !important; 
+      background: rgba(0, 0, 0, 0.6) !important; 
       backdrop-filter: blur(10px);
-      -webkit-backdrop-filter: blur(10px);
-      padding: 0 !important; margin-top: 1.5em; margin-bottom: 1.5em; border-radius: 0.5rem; border: 1px solid rgba(255,255,255,0.1); 
+      padding: 0 !important; margin-top: 1.5em; margin-bottom: 1.5em; border-radius: 0px; border-left: 3px solid #67e8f9; 
     }
-    .prose code { color: #67e8f9 !important; font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace; }
+    .prose code { color: #67e8f9 !important; font-family: ui-monospace, monospace; }
     .prose pre code { color: inherit !important; padding: 1rem !important; display: block; overflow-x: auto; background: transparent !important; }
     .prose p, .prose li { color: #cbd5e1 !important; line-height: 1.8; }
-    .prose h1, .prose h2, .prose h3, .prose h4 { color: #f8fafc !important; font-weight: 800; border-bottom: 1px solid rgba(255,255,255,0.1); padding-bottom: 0.5rem; }
-    .prose a { color: #38bdf8 !important; text-decoration: none; }
-    .prose a:hover { text-decoration: underline; }
-    .prose blockquote { border-left-color: #06b6d4 !important; background: rgba(6,182,212,0.1); padding: 0.5rem 1rem; font-style: normal !important; color: #94a3b8 !important;}
+    .prose h1, .prose h2, .prose h3 { color: #f8fafc !important; font-weight: 900; border-bottom: 1px solid rgba(255,255,255,0.1); padding-bottom: 0.5rem; font-family: 'Rajdhani', sans-serif; letter-spacing: 1px;}
   </style>
 </head>
-<body class="bg-black text-slate-200 overflow-x-hidden selection:bg-cyan-500/30">
+<body class="bg-[#050505] text-slate-200 overflow-x-hidden selection:bg-cyan-500/30">
   <div id="root"></div>
 
   <script type="text/babel" data-type="module">
@@ -93,13 +115,13 @@
     import { 
       Trophy, Flame, Code2, CheckCircle2, 
       Swords, Activity, Search, Tag, Settings, Image as ImageIcon,
-      X, Plus, FileText, Upload, ArrowLeft, TerminalSquare, Trash2
+      X, Plus, FileText, Upload, ArrowLeft, TerminalSquare, Trash2, Target, Zap
     } from 'https://esm.sh/lucide-react@0.263.1';
 
     // ==========================================
-    // 炫酷彩色霓虹粒子网引擎 (Canvas) - 彻底重构的无限制彩色效果
+    // 究极特效：星云漩涡核心 (Vortex Core)
     // ==========================================
-    const NeonPlexusBackground = ({ isGodMode }) => {
+    const VortexBackground = ({ isGodMode, burstTrigger }) => {
       const canvasRef = useRef(null);
 
       useEffect(() => {
@@ -108,93 +130,100 @@
         let width = canvas.width = window.innerWidth;
         let height = canvas.height = window.innerHeight;
 
-        let particles = [];
-        const numParticles = isGodMode ? 90 : 50; 
-        let globalHue = 0;
+        const particles = [];
+        const particleCount = 400; // 粒子数量
+        
+        // 爆发时的额外速度倍率
+        let burstMultiplier = 1;
 
-        for (let i = 0; i < numParticles; i++) {
-          particles.push({
-            x: Math.random() * width,
-            y: Math.random() * height,
-            vx: (Math.random() - 0.5) * (isGodMode ? 3 : 0.8),
-            vy: (Math.random() - 0.5) * (isGodMode ? 3 : 0.8),
-            colorOffset: Math.random() * 360,
-            size: Math.random() * 2 + 1
-          });
-        }
-
-        let animationFrameId;
-
-        const draw = () => {
-          ctx.globalCompositeOperation = 'source-over';
-          ctx.fillStyle = isGodMode ? 'rgba(5, 5, 10, 0.2)' : 'rgba(5, 10, 20, 0.4)';
-          ctx.fillRect(0, 0, width, height);
-          
-          // 在超神模式下开启高光叠加混合，制造迷幻感
-          ctx.globalCompositeOperation = isGodMode ? 'lighter' : 'source-over';
-          globalHue += isGodMode ? 1.5 : 0.2;
-
-          const connectDistance = isGodMode ? 180 : 120;
-
-          for (let i = 0; i < numParticles; i++) {
-            let p = particles[i];
+        class Particle {
+          constructor() {
+            this.reset();
+            this.angle = Math.random() * Math.PI * 2;
+            this.radius = Math.random() * (width > height ? width : height);
+          }
+          reset() {
+            this.angle = Math.random() * Math.PI * 2;
+            this.radius = Math.random() * 50; // 从核心生成
+            this.speed = (Math.random() * 2 + 0.5);
+            this.size = Math.random() * 2.5 + 0.5;
+            this.life = 1;
+          }
+          update(isGodMode, multiplier) {
+            // 轨道旋转速度
+            this.angle += (isGodMode ? 0.05 : 0.005) * multiplier;
+            // 向外扩散速度
+            this.radius += (isGodMode ? this.speed * 4 : this.speed * 0.5) * multiplier;
             
-            p.x += p.vx;
-            p.y += p.vy;
+            this.x = width / 2 + Math.cos(this.angle) * this.radius;
+            this.y = height / 2 + Math.sin(this.angle) * this.radius;
 
-            // 边缘反弹
-            if (p.x < 0 || p.x > width) p.vx *= -1;
-            if (p.y < 0 || p.y > height) p.vy *= -1;
-
-            ctx.beginPath();
-            ctx.arc(p.x, p.y, p.size, 0, Math.PI * 2);
-            ctx.fillStyle = isGodMode ? `hsl(${(globalHue + p.colorOffset) % 360}, 100%, 65%)` : 'rgba(6, 182, 212, 0.8)';
-            ctx.fill();
-
-            // 绘制连线与彩色发光几何体
-            for (let j = i + 1; j < numParticles; j++) {
-              let p2 = particles[j];
-              let dx = p.x - p2.x;
-              let dy = p.y - p2.y;
-              let dist = Math.sqrt(dx * dx + dy * dy);
-
-              if (dist < connectDistance) {
-                ctx.beginPath();
-                ctx.moveTo(p.x, p.y);
-                ctx.lineTo(p2.x, p2.y);
-                ctx.lineWidth = isGodMode ? 1.5 : 0.8;
-                ctx.strokeStyle = isGodMode 
-                  ? `hsla(${(globalHue + p.colorOffset) % 360}, 100%, 60%, ${1 - dist / connectDistance})`
-                  : `rgba(6, 182, 212, ${1 - dist / connectDistance})`;
-                ctx.stroke();
-
-                if (isGodMode) {
-                  for (let k = j + 1; k < numParticles; k++) {
-                    let p3 = particles[k];
-                    let dx2 = p2.x - p3.x;
-                    let dy2 = p2.y - p3.y;
-                    let dist2 = Math.sqrt(dx2 * dx2 + dy2 * dy2);
-                    
-                    // 当三个点互相靠近时，渲染彩色多边形叠加色
-                    if (dist2 < connectDistance) {
-                       ctx.beginPath();
-                       ctx.moveTo(p.x, p.y);
-                       ctx.lineTo(p2.x, p2.y);
-                       ctx.lineTo(p3.x, p3.y);
-                       ctx.closePath();
-                       ctx.fillStyle = `hsla(${(globalHue + p.colorOffset) % 360}, 100%, 50%, ${0.04 * (1 - dist/connectDistance)})`;
-                       ctx.fill();
-                    }
-                  }
-                }
-              }
+            if (this.radius > (width > height ? width : height)) {
+              this.reset();
             }
           }
+          draw(ctx, isGodMode) {
+            ctx.beginPath();
+            ctx.arc(this.x, this.y, this.size, 0, Math.PI * 2);
+            
+            // 距离核心越远越透明
+            const alpha = Math.max(0, 1 - (this.radius / (width * 0.6)));
+            
+            if (isGodMode) {
+              // 猩红/橙色渐变
+              const hue = 10 + (this.radius % 40); 
+              ctx.fillStyle = `hsla(${hue}, 100%, 60%, ${alpha})`;
+              ctx.shadowColor = `hsla(${hue}, 100%, 50%, 0.8)`;
+            } else {
+              // 深空青蓝色
+              const hue = 190 + (this.radius % 30);
+              ctx.fillStyle = `hsla(${hue}, 100%, 60%, ${alpha})`;
+              ctx.shadowColor = `hsla(${hue}, 100%, 50%, 0.8)`;
+            }
+            ctx.shadowBlur = isGodMode ? 15 : 5;
+            ctx.fill();
+            ctx.shadowBlur = 0; // 重置
+          }
+        }
 
-          animationFrameId = requestAnimationFrame(draw);
+        for (let i = 0; i < particleCount; i++) particles.push(new Particle());
+
+        let animationId;
+        const animate = () => {
+          // 残影效果
+          ctx.fillStyle = isGodMode ? 'rgba(5, 0, 0, 0.15)' : 'rgba(0, 5, 10, 0.2)';
+          ctx.fillRect(0, 0, width, height);
+
+          // 爆发衰减逻辑
+          if (burstMultiplier > 1) burstMultiplier *= 0.95;
+          if (burstMultiplier < 1) burstMultiplier = 1;
+
+          // 绘制核心黑洞发光
+          const coreRadius = isGodMode ? 80 + Math.random()*20 : 40;
+          const gradient = ctx.createRadialGradient(width/2, height/2, 0, width/2, height/2, coreRadius * 4);
+          if (isGodMode) {
+            gradient.addColorStop(0, `rgba(255, 0, 0, ${0.4 * burstMultiplier})`);
+            gradient.addColorStop(0.2, 'rgba(255, 80, 0, 0.2)');
+            gradient.addColorStop(1, 'transparent');
+          } else {
+            gradient.addColorStop(0, 'rgba(0, 200, 255, 0.2)');
+            gradient.addColorStop(1, 'transparent');
+          }
+          ctx.fillStyle = gradient;
+          ctx.fillRect(0,0,width,height);
+
+          particles.forEach(p => {
+            p.update(isGodMode, burstMultiplier);
+            p.draw(ctx, isGodMode);
+          });
+
+          animationId = requestAnimationFrame(animate);
         };
 
-        draw();
+        animate();
+
+        // 监听爆发触发
+        if (burstTrigger) { burstMultiplier = 15; } // 赋予瞬间极高倍率
 
         const handleResize = () => {
           width = canvas.width = window.innerWidth;
@@ -203,17 +232,12 @@
         window.addEventListener('resize', handleResize);
 
         return () => {
-          cancelAnimationFrame(animationFrameId);
+          cancelAnimationFrame(animationId);
           window.removeEventListener('resize', handleResize);
         };
-      }, [isGodMode]);
+      }, [isGodMode, burstTrigger]);
 
-      return (
-        <canvas 
-          ref={canvasRef} 
-          className="fixed inset-0 z-0 pointer-events-none"
-        />
-      );
+      return <canvas ref={canvasRef} className="fixed inset-0 z-0 pointer-events-none mix-blend-screen" />;
     };
 
     // ==========================================
@@ -224,19 +248,12 @@
       const [showBgSettings, setShowBgSettings] = useState(false);
 
       useEffect(() => {
-        // 1. 渲染代码高亮
         if (contentRef.current) {
-          contentRef.current.querySelectorAll('pre code').forEach((block) => {
-            hljs.highlightElement(block);
-          });
+          contentRef.current.querySelectorAll('pre code').forEach((block) => { hljs.highlightElement(block); });
         }
-        // 2. 渲染 LaTeX 公式
-        if (window.MathJax) {
-          window.MathJax.typesetPromise([contentRef.current]).catch((err) => console.log(err));
-        }
+        if (window.MathJax) { window.MathJax.typesetPromise([contentRef.current]).catch((err) => console.log(err)); }
       }, [problem]);
 
-      // 处理背景上传
       const handleBgImageUpload = (e) => {
         const file = e.target.files[0];
         if (!file) return;
@@ -244,16 +261,11 @@
         reader.onload = (event) => {
           const img = new Image();
           img.onload = () => {
-            const canvas = document.createElement('canvas');
-            const ctx = canvas.getContext('2d');
-            const MAX_WIDTH = 1920; const MAX_HEIGHT = 1080;
-            let width = img.width; let height = img.height;
-            if (width > height) { if (width > MAX_WIDTH) { height *= MAX_WIDTH / width; width = MAX_WIDTH; } } 
-            else { if (height > MAX_HEIGHT) { width *= MAX_HEIGHT / height; height = MAX_HEIGHT; } }
-            canvas.width = width; canvas.height = height;
-            ctx.drawImage(img, 0, 0, width, height);
-            setBgImage(canvas.toDataURL('image/jpeg', 0.8));
-            setShowBgSettings(false);
+            const canvas = document.createElement('canvas'); const ctx = canvas.getContext('2d');
+            let w = img.width; let h = img.height;
+            if (w > h && w > 1920) { h *= 1920/w; w = 1920; } else if (h > 1080) { w *= 1080/h; h = 1080; }
+            canvas.width = w; canvas.height = h; ctx.drawImage(img, 0, 0, w, h);
+            setBgImage(canvas.toDataURL('image/jpeg', 0.8)); setShowBgSettings(false);
           };
           img.src = event.target.result;
         };
@@ -262,82 +274,55 @@
 
       return (
         <div className="min-h-screen relative font-sans animate-[fadeIn_0.3s_ease-out]">
-          {/* 阅读舱专属背景 */}
           {bgImage ? (
-            <div className="fixed inset-0 z-0 bg-cover bg-center bg-no-repeat bg-fixed opacity-60 transition-all duration-1000" style={{ backgroundImage: `url(${bgImage})` }} />
-          ) : (
-            <div className="fixed inset-0 z-0 bg-slate-900" />
-          )}
+            <div className="fixed inset-0 z-0 bg-cover bg-center bg-no-repeat bg-fixed opacity-60" style={{ backgroundImage: `url(${bgImage})` }} />
+          ) : ( <div className="fixed inset-0 z-0 bg-slate-900" /> )}
 
-          {/* 顶部导航 */}
-          <div className="fixed top-0 left-0 right-0 z-50 reader-glass border-b border-slate-700/50 shadow-lg">
+          <div className="fixed top-0 left-0 right-0 z-50 reader-glass border-b border-cyan-500/30">
             <div className="max-w-5xl mx-auto px-4 h-16 flex items-center justify-between">
-              <button onClick={onBack} className="flex items-center gap-2 text-cyan-400 hover:text-cyan-300 transition-all font-bold px-4 py-2 bg-cyan-950/50 rounded-lg border border-cyan-800">
-                <ArrowLeft size={18} /> 撤离阅读舱
+              <button onClick={onBack} className="flex items-center gap-2 text-cyan-400 hover:text-cyan-300 font-sci-fi font-bold px-4 py-2 bg-cyan-950/50 rounded-none border-l-4 border-cyan-500 transition-all hover:pr-6">
+                <ArrowLeft size={18} /> 撤离舱室 / BACK
               </button>
-              
               <div className="flex items-center gap-4">
-                <span className="text-slate-400 font-mono text-sm hidden sm:block">SYSTEM // READER_MODE</span>
-                <button onClick={() => setShowBgSettings(!showBgSettings)} className="p-2 text-slate-300 hover:text-white bg-slate-800 rounded-lg border border-slate-600 transition-all">
+                <button onClick={() => setShowBgSettings(!showBgSettings)} className="p-2 text-slate-300 hover:text-cyan-400 bg-black/50 border border-slate-600 transition-all">
                   <ImageIcon size={20} />
                 </button>
               </div>
             </div>
             
-            {/* 背景设置下拉面板 */}
             {showBgSettings && (
-              <div className="absolute top-16 right-4 mt-2 p-4 bg-slate-800 border border-cyan-500/50 rounded-xl shadow-2xl w-80 animate-[fadeIn_0.2s_ease-out]">
-                <label className="block text-sm font-bold text-cyan-300 mb-3">阅读舱壁纸设定</label>
-                <label className="cursor-pointer flex flex-col items-center justify-center gap-2 w-full py-6 border-2 border-dashed border-cyan-500/40 rounded-xl hover:bg-cyan-900/30 transition-all text-slate-300">
+              <div className="absolute top-16 right-4 mt-2 p-4 bg-slate-900 border border-cyan-500 rounded-none shadow-2xl w-80">
+                <label className="block text-sm font-sci-fi font-bold text-cyan-400 mb-3 uppercase">WallPaper Settings</label>
+                <label className="cursor-pointer flex flex-col items-center justify-center gap-2 w-full py-6 border-2 border-dashed border-cyan-500/40 hover:bg-cyan-900/30 transition-all text-slate-300">
                   <Upload size={24} className="text-cyan-400"/> 
-                  <span className="font-bold text-sm">选择本地图片</span>
+                  <span className="font-bold text-sm">导入沉浸背景图</span>
                   <input type="file" accept="image/*" onChange={handleBgImageUpload} className="hidden" />
                 </label>
                 {bgImage && (
-                  <button onClick={() => {setBgImage(''); setShowBgSettings(false)}} className="w-full mt-3 py-2 bg-red-950/50 text-red-400 rounded-lg text-sm font-bold border border-red-900 hover:bg-red-900/50">
-                    清除背景
-                  </button>
+                  <button onClick={() => {setBgImage(''); setShowBgSettings(false)}} className="w-full mt-3 py-2 bg-red-950/50 text-red-400 font-bold border border-red-900 hover:bg-red-900/80">清除背景</button>
                 )}
               </div>
             )}
           </div>
 
-          {/* 文章主体内容区 */}
-          <div className="relative z-10 pt-24 pb-20 px-4">
-            <div className="max-w-4xl mx-auto reader-glass rounded-2xl p-6 md:p-12 shadow-2xl">
-              
-              {/* 题头信息 */}
-              <div className="border-b border-slate-700/60 pb-8 mb-8">
-                <div className="flex items-center gap-3 mb-4">
-                  <span className="px-3 py-1 bg-cyan-950 text-cyan-400 font-mono font-bold text-sm rounded border border-cyan-800">
-                    {problem.platform}
-                  </span>
-                  <span className={`px-3 py-1 rounded font-black text-sm border ${
-                    problem.difficulty === '困难' ? 'bg-red-950/50 text-red-400 border-red-800' :
-                    problem.difficulty === '中等' ? 'bg-orange-950/50 text-orange-400 border-orange-800' :
-                    'bg-green-950/50 text-green-400 border-green-800'
-                  }`}>
-                    {problem.difficulty}
-                  </span>
-                  <span className="text-slate-500 font-mono text-sm ml-auto">{problem.date}</span>
+          <div className="relative z-10 pt-28 pb-20 px-4">
+            <div className="max-w-4xl mx-auto reader-glass p-8 md:p-12 shadow-2xl hud-clip border-t-4 border-cyan-500">
+              <div className="border-b border-slate-700/60 pb-6 mb-8">
+                <div className="flex items-center gap-3 mb-4 font-sci-fi">
+                  <span className="px-3 py-1 bg-cyan-950 text-cyan-400 font-bold text-sm border border-cyan-800">{problem.platform}</span>
+                  <span className="text-slate-500 text-sm ml-auto tracking-widest">{problem.date}</span>
                 </div>
-                <h1 className="text-3xl md:text-5xl font-black text-white leading-tight mb-4">
-                  {problem.title}
-                </h1>
+                <h1 className="text-3xl md:text-5xl font-sci-fi font-black text-white leading-tight mb-4 tracking-wide">{problem.title}</h1>
                 <div className="flex flex-wrap gap-2">
                   {problem.tags && problem.tags.map((tag, idx) => (
-                    <span key={idx} className="text-xs px-2 py-1 bg-slate-800/80 text-slate-300 rounded border border-slate-600 flex items-center gap-1">
-                      <Tag size={12}/> {tag}
-                    </span>
+                    <span key={idx} className="text-xs px-2 py-1 bg-black/60 text-slate-300 border border-slate-700 flex items-center gap-1 font-mono"><Tag size={12}/> {tag}</span>
                   ))}
                 </div>
               </div>
-
-              {/* Markdown 正文渲染 */}
               <div 
                 ref={contentRef}
                 className="prose prose-invert prose-cyan max-w-none prose-lg"
-                dangerouslySetInnerHTML={{ __html: marked.parse(problem.markdown || '> *此题目暂未记录详细题解。*') }}
+                dangerouslySetInnerHTML={{ __html: marked.parse(problem.markdown || '> *该节点暂无详细记忆数据。*') }}
               />
             </div>
           </div>
@@ -346,10 +331,9 @@
     };
 
     // ==========================================
-    // 主应用程序 (调度器)
+    // 主应用程序
     // ==========================================
     const App = () => {
-      // 视图控制：'home' = 主控制台, 'viewer' = 题解阅读舱
       const [view, setView] = useState('home');
       const [viewingProblem, setViewingProblem] = useState(null);
 
@@ -358,19 +342,15 @@
         return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`;
       };
 
-      // --- 数据持久化 ---
       const [problems, setProblems] = useState(() => {
-        const savedData = localStorage.getItem('acmer_data_v4');
+        const savedData = localStorage.getItem('acmer_data_v5');
         return savedData ? JSON.parse(savedData) : [];
       });
-
-      // 阅读舱专属背景
       const [readerBg, setReaderBg] = useState(() => localStorage.getItem('acmer_reader_bg') || '');
 
-      useEffect(() => { localStorage.setItem('acmer_data_v4', JSON.stringify(problems)); }, [problems]);
+      useEffect(() => { localStorage.setItem('acmer_data_v5', JSON.stringify(problems)); }, [problems]);
       useEffect(() => { localStorage.setItem('acmer_reader_bg', readerBg); }, [readerBg]);
 
-      // --- 表单状态 ---
       const [newPlatform, setNewPlatform] = useState('Codeforces');
       const [newTitle, setNewTitle] = useState('');
       const [newDifficulty, setNewDifficulty] = useState('中等');
@@ -379,35 +359,44 @@
       const [searchQuery, setSearchQuery] = useState('');
 
       const todayCount = problems.filter(p => p.date === getTodayStr()).length;
-      const isGodMode = todayCount >= 5; 
+      
+      // 瞬间爆发逻辑状态
+      const [isGodMode, setIsGodMode] = useState(todayCount >= 5);
+      const [flashEffect, setFlashEffect] = useState(false);
+      const prevCountRef = useRef(todayCount);
 
-      // 录入新题
+      // 监听题数变化，触发核爆特效
+      useEffect(() => {
+        setIsGodMode(todayCount >= 5);
+        // 只有从 <5 变成 >=5 时，才触发瞬间特效 (防止一刷新就亮瞎眼)
+        if (prevCountRef.current < 5 && todayCount >= 5) {
+          setFlashEffect(true);
+          // 1.5秒后移除闪光元素，保留背景红眼特效
+          setTimeout(() => setFlashEffect(false), 1500);
+        }
+        prevCountRef.current = todayCount;
+      }, [todayCount]);
+
+
       const handleAddProblem = (e) => {
         e.preventDefault();
         if (!newTitle.trim()) return;
-
         const newProblem = {
-          id: Date.now(),
-          title: newTitle,
-          platform: newPlatform,
-          date: getTodayStr(),
-          difficulty: newDifficulty,
+          id: Date.now(), title: newTitle, platform: newPlatform,
+          date: getTodayStr(), difficulty: newDifficulty,
           tags: newTags.split(',').map(t => t.trim()).filter(t => t !== ''),
           markdown: markdownContent 
         };
-
         setProblems([newProblem, ...problems]);
         setNewTitle(''); setNewTags(''); setMarkdownContent('');
       };
 
-      // 删除记录
       const handleDeleteProblem = (id) => {
-        if (window.confirm('警告：确认要永久删除这条战绩记录吗？')) {
+        if (window.confirm('警告：数据删除后无法恢复，确认抹除该记录？')) {
           setProblems(problems.filter(p => p.id !== id));
         }
       };
 
-      // 读取本地 MD 文件填入表单
       const handleMdFileUpload = (e) => {
         const file = e.target.files[0];
         if (!file) return;
@@ -416,19 +405,13 @@
         reader.readAsText(file);
       };
 
-      // 进入阅读舱
-      const openReader = (problem) => {
-        setViewingProblem(problem);
-        setView('viewer');
-        window.scrollTo(0, 0);
-      };
+      const openReader = (problem) => { setViewingProblem(problem); setView('viewer'); window.scrollTo(0, 0); };
 
-      // --- 游戏评级 ---
       const getStatusEffect = (count) => {
-        if (count === 0) return { label: '系统休眠 (SLEEPING)', color: 'text-slate-500', border: 'border-slate-800' };
-        if (count <= 2) return { label: '引擎点火 (WARMING UP)', color: 'text-cyan-400', border: 'border-cyan-500/50 shadow-[0_0_20px_rgba(6,182,212,0.3)]' };
-        if (count <= 4) return { label: '火力全开 (UNSTOPPABLE)', color: 'text-blue-400', border: 'border-blue-400/80 shadow-[0_0_40px_rgba(59,130,246,0.6)]' };
-        return { label: '超神时刻 (GOD MODE!)', color: 'text-red-500 font-black tracking-widest', border: 'animate-hyper-glow' };
+        if (count === 0) return { label: 'SYSTEM SLEEPING // 系统休眠', color: 'text-slate-500', glow: '' };
+        if (count <= 2) return { label: 'ENGINE IGNITION // 引擎点火', color: 'text-cyan-400', glow: 'shadow-[0_0_30px_rgba(6,182,212,0.15)]' };
+        if (count <= 4) return { label: 'UNSTOPPABLE // 势不可挡', color: 'text-blue-400', glow: 'shadow-[0_0_40px_rgba(59,130,246,0.3)]' };
+        return { label: 'GOD MODE // 超神时刻', color: 'text-red-500', glow: 'hud-clip-red' };
       };
       const currentStatus = getStatusEffect(todayCount);
 
@@ -438,111 +421,116 @@
         return p.title.toLowerCase().includes(query) || p.platform.toLowerCase().includes(query) || tagMatch;
       });
 
-      // ==========================================
-      // 视图渲染分支
-      // ==========================================
       if (view === 'viewer' && viewingProblem) {
         return <MarkdownViewer problem={viewingProblem} onBack={() => setView('home')} bgImage={readerBg} setBgImage={setReaderBg} />;
       }
 
-      // 主控制台视图
       return (
         <div className="min-h-screen relative font-sans">
           
-          {/* 超神状态专属：彩色动态流光遮罩 */}
-          {isGodMode && <div className="fixed inset-0 z-0 pointer-events-none colorful-overlay mix-blend-screen" />}
-          
-          {/* 炫酷彩色霓虹粒子网 */}
-          <NeonPlexusBackground isGodMode={isGodMode} />
+          {/* === 破茧成神的瞬间爆闪特效层 === */}
+          {flashEffect && (
+            <div className="fixed inset-0 z-50 pointer-events-none animate-flash mix-blend-overlay flex items-center justify-center">
+               <div className="animate-shockwave"></div>
+            </div>
+          )}
+
+          {/* 底层深空漩涡 Canvas */}
+          <VortexBackground isGodMode={isGodMode} burstTrigger={flashEffect} />
 
           {/* 主体 UI */}
-          <div className="max-w-7xl mx-auto space-y-6 relative z-10 p-4 md:p-8">
+          <div className="max-w-7xl mx-auto space-y-8 relative z-10 p-4 md:p-8">
             
-            {/* 顶栏 */}
-            <header className="flex items-center justify-between glass-panel p-5 rounded-2xl border-t border-t-slate-600">
-              <div className="flex items-center gap-4">
-                <div className={`p-3 rounded-xl ${isGodMode ? 'bg-red-600 shadow-[0_0_30px_#ef4444]' : 'bg-cyan-600 shadow-[0_0_20px_rgba(6,182,212,0.5)]'}`}>
-                  <TerminalSquare className="text-white w-8 h-8" />
+            {/* 顶栏 HUD */}
+            <header className="flex items-center justify-between hud-panel p-5 hud-clip">
+              <div className="scanlines"></div>
+              <div className="flex items-center gap-4 relative z-10">
+                <div className={`p-3 border ${isGodMode ? 'bg-red-950/50 border-red-500 text-red-500' : 'bg-cyan-950/50 border-cyan-500 text-cyan-400'}`}>
+                  <TerminalSquare size={28} />
                 </div>
                 <div>
-                  <h1 className="text-2xl md:text-3xl font-black text-white tracking-wider">
-                    ACMer <span className={isGodMode ? 'text-red-500' : 'text-cyan-400'}>NEXUS</span>
+                  <h1 className="text-2xl md:text-3xl font-sci-fi font-black text-white tracking-widest uppercase">
+                    ACMer <span className={isGodMode ? 'text-red-500 drop-shadow-[0_0_10px_#ef4444]' : 'text-cyan-400'}>NEXUS</span>
                   </h1>
-                  <p className="text-slate-400 text-xs font-mono tracking-widest mt-1">MAIN_DASHBOARD // ONLINE</p>
+                  <p className="text-slate-500 text-xs font-mono tracking-widest mt-1">v3.0 // HUD_ONLINE</p>
                 </div>
               </div>
-              <div className="text-right hidden md:block">
-                <p className="text-xs text-slate-400 font-bold uppercase tracking-widest">历史总 AC</p>
-                <p className="text-4xl font-black text-white drop-shadow-[0_0_15px_rgba(255,255,255,0.8)]">
-                  {problems.length}
-                </p>
+              <div className="text-right hidden md:block relative z-10">
+                <p className="text-xs text-slate-500 font-sci-fi font-bold uppercase tracking-widest">TOTAL AC</p>
+                <p className="text-4xl font-sci-fi font-black text-white">{problems.length}</p>
               </div>
             </header>
 
-            {/* 超级状态大屏 */}
-            <section className={`glass-panel rounded-2xl p-6 md:p-10 transition-all duration-500 border-2 ${currentStatus.border}`}>
-              <div className="flex flex-col md:flex-row items-center justify-between gap-8">
-                <div className="flex items-center gap-6">
-                  <div className={`p-6 rounded-2xl bg-black/50 border ${isGodMode ? 'border-red-500 shadow-[0_0_50px_#ef4444]' : 'border-slate-700'}`}>
-                    {isGodMode ? <Flame size={70} className="text-red-500 animate-pulse" /> : <Trophy size={70} className={currentStatus.color} />}
+            {/* === 核心状态大屏 (深度机甲美化版) === */}
+            <section className={`hud-panel p-8 md:p-10 hud-clip ${currentStatus.glow} transition-all duration-700`}>
+              <div className="scanlines"></div>
+              <div className="flex flex-col md:flex-row items-center justify-between gap-8 relative z-10">
+                
+                <div className="flex items-center gap-6 w-full md:w-auto">
+                  <div className={`p-6 border-l-4 ${isGodMode ? 'bg-red-950/30 border-red-500 shadow-[0_0_30px_rgba(239,68,68,0.3)]' : 'bg-black/50 border-slate-600'}`}>
+                    {isGodMode ? <Flame size={60} className="text-red-500" /> : <Zap size={60} className={currentStatus.color} />}
                   </div>
                   <div>
-                    <p className="text-sm font-bold text-slate-500 mb-2 tracking-widest uppercase">Current Status</p>
-                    <h2 className={`text-4xl md:text-6xl tracking-tighter ${currentStatus.color}`} style={{ textShadow: isGodMode ? '0 0 40px #ef4444' : 'none' }}>
+                    <p className="text-xs font-mono text-slate-500 mb-1 tracking-widest uppercase flex items-center gap-2">
+                      <Target size={14}/> Current Protocol
+                    </p>
+                    <h2 className={`text-4xl md:text-5xl font-sci-fi font-black tracking-wider ${currentStatus.color}`} style={{ textShadow: isGodMode ? '0 0 20px #ef4444' : 'none' }}>
                       {currentStatus.label}
                     </h2>
-                    <p className="text-slate-300 mt-4 text-xl font-medium">
-                      今日战绩：<span className="text-5xl font-black mx-3 text-white drop-shadow-lg">{todayCount}</span> 题
+                    <p className="text-slate-400 mt-2 text-lg font-sci-fi font-bold tracking-widest uppercase">
+                      TODAY AC: <span className="text-4xl text-white ml-2">{todayCount}</span>
                     </p>
                   </div>
                 </div>
                 
-                {/* 赛博能量槽 */}
-                <div className="w-full md:w-96 bg-black rounded-full h-8 overflow-hidden border-2 border-slate-700 relative shadow-[inset_0_0_20px_rgba(0,0,0,1)]">
-                  <div 
-                    className={`h-full transition-all duration-1000 relative ${isGodMode ? 'bg-gradient-to-r from-red-800 via-red-500 to-yellow-400' : 'bg-gradient-to-r from-cyan-800 via-cyan-400 to-blue-400'}`}
-                    style={{ width: `${Math.min((todayCount / 5) * 100, 100)}%` }}
-                  >
-                    <div className="absolute top-0 left-0 right-0 h-1/2 bg-white/40 rounded-t-full"></div>
+                {/* 斜向切割的高级能量槽 */}
+                <div className="w-full md:w-[400px] flex flex-col gap-2">
+                  <div className="flex justify-between text-xs font-sci-fi font-bold tracking-widest text-slate-400 uppercase">
+                    <span>Energy Power</span>
+                    <span className={isGodMode ? 'text-red-500' : 'text-cyan-400'}>Target: 5</span>
                   </div>
-                  <div className="absolute inset-0 flex items-center justify-end pr-5 font-black text-sm text-white mix-blend-overlay tracking-widest">
-                    TARGET: 5
+                  {/* 进度条外壳：倾斜角 */}
+                  <div className="w-full h-8 bg-black/80 border border-slate-700 p-1" style={{ transform: 'skewX(-15deg)' }}>
+                    {/* 进度条内芯：带动态斜纹和渐变 */}
+                    <div 
+                      className={`h-full transition-all duration-1000 ease-out energy-bar-stripes ${isGodMode ? 'bg-gradient-to-r from-red-800 to-red-500 shadow-[0_0_20px_#ef4444]' : 'bg-gradient-to-r from-cyan-800 to-cyan-400 shadow-[0_0_15px_#06b6d4]'}`}
+                      style={{ width: `${Math.min((todayCount / 5) * 100, 100)}%` }}
+                    ></div>
                   </div>
                 </div>
+
               </div>
             </section>
 
-            <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+            {/* === 左右分栏布局 === */}
+            <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
               
               {/* 左侧：列表 */}
-              <div className="lg:col-span-2 glass-panel rounded-2xl flex flex-col border-t-4 border-t-cyan-500" style={{ maxHeight: '800px' }}>
-                <div className="p-6 border-b border-slate-700/80 bg-black/40 flex flex-col sm:flex-row sm:items-center justify-between gap-4">
-                  <h3 className="font-black text-white flex items-center gap-3 text-xl tracking-wide">
-                    <CheckCircle2 size={26} className="text-cyan-400" />
-                    战绩归档系统
+              <div className="lg:col-span-2 hud-panel flex flex-col border-t-4 border-t-cyan-500" style={{ maxHeight: '800px' }}>
+                <div className="scanlines"></div>
+                <div className="p-6 border-b border-cyan-500/20 bg-black/40 flex flex-col sm:flex-row sm:items-center justify-between gap-4 relative z-10">
+                  <h3 className="font-sci-fi font-black text-white flex items-center gap-3 text-xl tracking-widest uppercase">
+                    <CheckCircle2 size={24} className="text-cyan-400" />
+                    Data Archive
                   </h3>
                   <div className="relative w-full sm:w-80">
-                    <Search className="absolute left-4 top-1/2 -translate-y-1/2 text-cyan-500 w-5 h-5" />
-                    <input 
-                      type="text" 
-                      placeholder="检索题目、平台、标签..." 
-                      value={searchQuery}
-                      onChange={(e) => setSearchQuery(e.target.value)}
-                      className="w-full pl-12 pr-4 py-3 bg-black/60 border border-slate-700 rounded-xl focus:border-cyan-500 focus:ring-1 focus:ring-cyan-500 transition-all outline-none text-slate-100 font-bold"
+                    <Search className="absolute left-4 top-1/2 -translate-y-1/2 text-cyan-500 w-4 h-4" />
+                    <input type="text" placeholder="检索 ID / 标签..." value={searchQuery} onChange={(e) => setSearchQuery(e.target.value)}
+                      className="w-full pl-12 pr-4 py-2.5 bg-black/80 border border-slate-700 text-slate-100 font-mono text-sm focus:border-cyan-500 outline-none" style={{ transform: 'skewX(-5deg)' }}
                     />
                   </div>
                 </div>
                 
-                <div className="divide-y divide-slate-800/80 overflow-y-auto flex-1 p-3 space-y-2">
+                <div className="divide-y divide-slate-800/80 overflow-y-auto flex-1 p-4 space-y-3 relative z-10">
                   {filteredProblems.map(problem => (
-                    <div key={problem.id} className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 p-5 bg-slate-900/40 hover:bg-slate-800/60 rounded-xl border border-slate-700/50 hover:border-cyan-500/50 transition-all group">
+                    <div key={problem.id} className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 p-4 bg-black/40 hover:bg-cyan-950/20 border border-slate-800 hover:border-cyan-500/50 transition-all group">
                       
                       <div className="flex items-center gap-5">
-                        <div className="text-cyan-400 border border-cyan-800 bg-cyan-950/30 font-black font-mono px-3 py-1.5 rounded text-sm shadow-[inset_0_0_10px_rgba(6,182,212,0.2)]">
-                          {problem.platform}
+                        <div className="text-cyan-400 border border-cyan-800 bg-black font-sci-fi font-bold px-3 py-1 text-sm tracking-widest uppercase" style={{ transform: 'skewX(-10deg)' }}>
+                          <span style={{ display: 'inline-block', transform: 'skewX(10deg)' }}>{problem.platform}</span>
                         </div>
                         <div className="flex flex-col gap-1">
-                          <span className="font-black text-slate-100 text-xl group-hover:text-cyan-300 transition-colors">
+                          <span className="font-bold text-slate-100 text-lg group-hover:text-cyan-400 transition-colors font-sci-fi tracking-wide">
                             {problem.title}
                           </span>
                           <div className="flex gap-2">
@@ -554,109 +542,103 @@
                       </div>
 
                       <div className="flex items-center gap-3 shrink-0 mt-2 sm:mt-0">
-                        <span className={`text-sm px-4 py-1.5 rounded-lg font-black border ${
-                          problem.difficulty === '困难' ? 'bg-red-950/30 text-red-400 border-red-800/50' :
-                          problem.difficulty === '中等' ? 'bg-orange-950/30 text-orange-400 border-orange-800/50' :
-                          'bg-green-950/30 text-green-400 border-green-800/50'
-                        }`}>
-                          {problem.difficulty}
+                        <span className={`text-xs px-4 py-1.5 font-black uppercase tracking-widest border ${
+                          problem.difficulty === '困难' ? 'bg-red-950/30 text-red-500 border-red-900/80' :
+                          problem.difficulty === '中等' ? 'bg-orange-950/30 text-orange-400 border-orange-900/80' :
+                          'bg-green-950/30 text-green-400 border-green-900/80'
+                        }`} style={{ transform: 'skewX(-10deg)' }}>
+                           <span style={{ display: 'inline-block', transform: 'skewX(10deg)' }}>{problem.difficulty}</span>
                         </span>
                         
-                        <button 
-                          onClick={() => openReader(problem)}
-                          className="flex items-center gap-2 px-5 py-2.5 bg-cyan-600 hover:bg-cyan-500 text-white font-bold rounded-lg transition-all shadow-[0_0_15px_rgba(6,182,212,0.4)] hover:shadow-[0_0_25px_rgba(6,182,212,0.6)] active:scale-95"
+                        <button onClick={() => openReader(problem)}
+                          className="flex items-center gap-2 px-4 py-2 bg-cyan-950/50 hover:bg-cyan-600 text-cyan-400 hover:text-white font-sci-fi font-bold border border-cyan-800 hover:border-cyan-400 transition-all uppercase tracking-widest text-sm"
+                          style={{ transform: 'skewX(-10deg)' }}
                         >
-                          <FileText size={18} />
-                          {problem.markdown ? '查看题解' : '详情'}
+                          <span className="flex items-center gap-1" style={{ display: 'inline-block', transform: 'skewX(10deg)' }}>
+                            <FileText size={14} className="inline mr-1"/>{problem.markdown ? 'READ_MD' : 'DETAIL'}
+                          </span>
                         </button>
 
-                        {/* 删除记录按钮 */}
-                        <button 
-                          onClick={() => handleDeleteProblem(problem.id)}
-                          className="flex items-center justify-center p-2.5 bg-red-950/30 hover:bg-red-600 text-red-500 hover:text-white font-bold rounded-lg transition-all border border-red-900/50 hover:shadow-[0_0_15px_rgba(239,68,68,0.4)] active:scale-95"
-                          title="删除该记录"
-                        >
-                          <Trash2 size={18} />
+                        <button onClick={() => handleDeleteProblem(problem.id)} className="p-2 bg-red-950/30 hover:bg-red-600 text-red-500 hover:text-white transition-all border border-red-900/50" title="PURGE DATA">
+                          <Trash2 size={16} />
                         </button>
                       </div>
 
                     </div>
                   ))}
                   {filteredProblems.length === 0 && (
-                    <div className="p-20 text-center text-slate-500 font-black text-2xl flex flex-col items-center gap-6">
-                      <Swords size={80} className="text-slate-700 opacity-40" />
-                      无可匹配数据 // SYSTEM_EMPTY
+                    <div className="p-16 text-center text-slate-600 font-sci-fi font-black text-xl tracking-widest flex flex-col items-center gap-4">
+                      <Swords size={64} className="opacity-30" />
+                      SYSTEM_EMPTY // NO DATA
                     </div>
                   )}
                 </div>
               </div>
 
               {/* 右侧：硬核录入表单 */}
-              <div className="glass-panel rounded-2xl p-6 md:p-8 border-t-4 border-t-blue-500 shadow-[0_10px_30px_rgba(0,0,0,0.5)]">
-                <h3 className="text-2xl font-black text-white mb-8 flex items-center gap-3">
-                  <Plus size={28} className="text-blue-400" />
-                  执行新 AC 录入
+              <div className="hud-panel p-6 md:p-8 border-t-4 border-t-blue-500">
+                <div className="scanlines"></div>
+                <h3 className="text-2xl font-sci-fi font-black text-white mb-8 flex items-center gap-3 tracking-widest uppercase relative z-10">
+                  <Plus size={24} className="text-blue-400" />
+                  INPUT_DATA
                 </h3>
                 
-                <form onSubmit={handleAddProblem} className="space-y-6">
+                <form onSubmit={handleAddProblem} className="space-y-6 relative z-10">
                   <div>
-                    <label className="block text-xs font-bold text-slate-400 mb-2 font-mono uppercase">Platform // 平台</label>
-                    <select value={newPlatform} onChange={(e) => setNewPlatform(e.target.value)} className="w-full bg-black border border-slate-700 text-slate-100 rounded-lg px-4 py-3.5 focus:border-blue-500 focus:ring-1 focus:ring-blue-500 transition-all font-bold">
-                      <option>Codeforces</option>
-                      <option>AtCoder</option>
-                      <option>LeetCode</option>
-                      <option>洛谷 (Luogu)</option>
-                      <option>HDU / POJ</option>
+                    <label className="block text-xs font-bold text-slate-500 mb-2 font-mono uppercase">Platform</label>
+                    <select value={newPlatform} onChange={(e) => setNewPlatform(e.target.value)} className="w-full bg-black/60 border border-slate-700 text-slate-100 px-4 py-3 focus:border-blue-500 outline-none font-sci-fi font-bold text-base tracking-widest uppercase" style={{ transform: 'skewX(-5deg)' }}>
+                      <option>Codeforces</option> <option>AtCoder</option> <option>LeetCode</option> <option>Luogu</option>
                     </select>
                   </div>
 
                   <div>
-                    <label className="block text-xs font-bold text-slate-400 mb-2 font-mono uppercase">Problem // 题目</label>
-                    <input type="text" value={newTitle} onChange={(e) => setNewTitle(e.target.value)} placeholder="e.g. A. Watermelon" className="w-full bg-black border border-slate-700 text-slate-100 rounded-lg px-4 py-3.5 focus:border-blue-500 focus:ring-1 focus:ring-blue-500 transition-all font-bold text-lg" />
+                    <label className="block text-xs font-bold text-slate-500 mb-2 font-mono uppercase">Problem Title</label>
+                    <input type="text" value={newTitle} onChange={(e) => setNewTitle(e.target.value)} placeholder="e.g. A. Watermelon" className="w-full bg-black/60 border border-slate-700 text-slate-100 px-4 py-3 focus:border-blue-500 outline-none font-bold text-base" style={{ transform: 'skewX(-5deg)' }} />
                   </div>
 
-                  <div className="p-5 bg-slate-900/80 rounded-xl border border-slate-700/80">
-                    <label className="flex items-center justify-between text-xs font-bold text-cyan-400 mb-3 font-mono">
-                      <span className="flex items-center gap-2"><FileText size={16}/> MD_CONTENT</span>
-                      <label className="cursor-pointer bg-cyan-950/50 text-cyan-300 px-3 py-1.5 rounded border border-cyan-800 hover:bg-cyan-900 transition-colors flex items-center gap-1">
-                        <Upload size={14}/> 本地导入 .md
+                  <div className="p-4 bg-black/40 border border-slate-700/80 relative">
+                    <label className="flex items-center justify-between text-xs font-bold text-cyan-500 mb-3 font-mono uppercase">
+                      <span className="flex items-center gap-2"><FileText size={14}/> MD_Payload</span>
+                      <label className="cursor-pointer bg-cyan-950/50 text-cyan-400 px-2 py-1 border border-cyan-800 hover:bg-cyan-900 transition-colors flex items-center gap-1" style={{ transform: 'skewX(-10deg)' }}>
+                        <span style={{ display: 'inline-block', transform: 'skewX(10deg)' }}><Upload size={12} className="inline mr-1"/>Import_MD</span>
                         <input type="file" accept=".md,.txt" onChange={handleMdFileUpload} className="hidden" />
                       </label>
                     </label>
-                    <textarea 
-                      value={markdownContent} onChange={(e) => setMarkdownContent(e.target.value)}
-                      placeholder="完美支持 Markdown、$$LaTeX 数学公式$$、以及 ```cpp 代码块高亮！写入你的硬核题解吧..."
-                      rows="6"
-                      className="w-full bg-black border border-slate-800 text-slate-300 rounded-lg px-4 py-3 focus:border-cyan-500 transition-all font-mono text-sm"
-                    />
+                    <textarea value={markdownContent} onChange={(e) => setMarkdownContent(e.target.value)} placeholder="输入 Markdown 数据 / $$LaTeX$$ / 代码块..." rows="5" className="w-full bg-transparent border-t border-slate-800 text-slate-300 pt-3 focus:outline-none font-mono text-sm leading-relaxed" />
                   </div>
 
                   <div>
-                    <label className="block text-xs font-bold text-slate-400 mb-2 font-mono uppercase">Tags // 标签</label>
+                    <label className="block text-xs font-bold text-slate-500 mb-2 font-mono uppercase">Tags</label>
                     <input type="text" value={newTags} onChange={(e) => setNewTags(e.target.value)} placeholder="DP, 图论, 数学..." className="w-full bg-black border border-slate-700 text-slate-100 rounded-lg px-4 py-3 focus:border-blue-500 transition-all font-bold" />
                   </div>
 
                   <div>
-                    <label className="block text-xs font-bold text-slate-400 mb-3 font-mono uppercase">Difficulty // 难度</label>
+                    <label className="block text-xs font-bold text-slate-500 mb-3 font-mono uppercase">Difficulty Level</label>
                     <div className="grid grid-cols-3 gap-3">
                       {['简单', '中等', '困难'].map(diff => (
                         <button key={diff} type="button" onClick={() => setNewDifficulty(diff)}
-                          className={`py-3 text-sm rounded-lg border-2 font-black transition-all ${
+                          className={`py-2 text-sm border font-sci-fi font-bold tracking-widest uppercase transition-all ${
                             newDifficulty === diff 
-                              ? (diff === '简单' ? 'bg-green-900/30 border-green-500 text-green-400' :
-                                 diff === '中等' ? 'bg-orange-900/30 border-orange-500 text-orange-400' :
-                                 'bg-red-900/30 border-red-500 text-red-400')
-                              : 'bg-black border-slate-800 text-slate-600 hover:border-slate-600'
+                              ? (diff === '简单' ? 'bg-green-950/50 border-green-500 text-green-400' :
+                                 diff === '中等' ? 'bg-orange-950/50 border-orange-500 text-orange-400' :
+                                 'bg-red-950/50 border-red-500 text-red-500')
+                              : 'bg-black/50 border-slate-800 text-slate-600 hover:border-slate-600'
                           }`}
-                        >{diff}</button>
+                          style={{ transform: 'skewX(-10deg)' }}
+                        >
+                          <span style={{ display: 'inline-block', transform: 'skewX(10deg)' }}>{diff}</span>
+                        </button>
                       ))}
                     </div>
                   </div>
 
                   <button type="submit" disabled={!newTitle.trim()}
-                    className="w-full mt-6 bg-blue-600 hover:bg-blue-500 text-white font-black rounded-xl py-4.5 transition-all active:scale-95 disabled:opacity-50 flex items-center justify-center gap-3 shadow-[0_0_20px_rgba(59,130,246,0.4)] text-xl"
+                    className="w-full mt-8 bg-blue-600 hover:bg-blue-500 text-white font-sci-fi font-black py-4 transition-all active:scale-95 disabled:opacity-50 flex items-center justify-center gap-3 uppercase tracking-widest text-lg"
+                    style={{ transform: 'skewX(-10deg)' }}
                   >
-                    <Swords size={24} /> 确认写入战绩
+                    <span className="flex items-center gap-2" style={{ display: 'inline-block', transform: 'skewX(10deg)' }}>
+                      <Swords size={20} className="inline mr-2" /> EXECUTE_WRITE
+                    </span>
                   </button>
                 </form>
               </div>
