@@ -93,7 +93,7 @@
     import { 
       Trophy, Flame, Code2, CheckCircle2, 
       Swords, Activity, Search, Tag, Settings, Image as ImageIcon,
-      X, Plus, FileText, Upload, ArrowLeft, TerminalSquare
+      X, Plus, FileText, Upload, ArrowLeft, TerminalSquare, Trash2
     } from 'https://esm.sh/lucide-react@0.263.1';
 
     // ==========================================
@@ -400,6 +400,13 @@
         setNewTitle(''); setNewTags(''); setMarkdownContent('');
       };
 
+      // 删除记录
+      const handleDeleteProblem = (id) => {
+        if (window.confirm('警告：确认要永久删除这条战绩记录吗？')) {
+          setProblems(problems.filter(p => p.id !== id));
+        }
+      };
+
       // 读取本地 MD 文件填入表单
       const handleMdFileUpload = (e) => {
         const file = e.target.files[0];
@@ -546,7 +553,7 @@
                         </div>
                       </div>
 
-                      <div className="flex items-center gap-4 shrink-0 mt-2 sm:mt-0">
+                      <div className="flex items-center gap-3 shrink-0 mt-2 sm:mt-0">
                         <span className={`text-sm px-4 py-1.5 rounded-lg font-black border ${
                           problem.difficulty === '困难' ? 'bg-red-950/30 text-red-400 border-red-800/50' :
                           problem.difficulty === '中等' ? 'bg-orange-950/30 text-orange-400 border-orange-800/50' :
@@ -555,13 +562,21 @@
                           {problem.difficulty}
                         </span>
                         
-                        {/* 核心改动：点击直接切入新页面（阅读舱） */}
                         <button 
                           onClick={() => openReader(problem)}
                           className="flex items-center gap-2 px-5 py-2.5 bg-cyan-600 hover:bg-cyan-500 text-white font-bold rounded-lg transition-all shadow-[0_0_15px_rgba(6,182,212,0.4)] hover:shadow-[0_0_25px_rgba(6,182,212,0.6)] active:scale-95"
                         >
                           <FileText size={18} />
                           {problem.markdown ? '查看题解' : '详情'}
+                        </button>
+
+                        {/* 删除记录按钮 */}
+                        <button 
+                          onClick={() => handleDeleteProblem(problem.id)}
+                          className="flex items-center justify-center p-2.5 bg-red-950/30 hover:bg-red-600 text-red-500 hover:text-white font-bold rounded-lg transition-all border border-red-900/50 hover:shadow-[0_0_15px_rgba(239,68,68,0.4)] active:scale-95"
+                          title="删除该记录"
+                        >
+                          <Trash2 size={18} />
                         </button>
                       </div>
 
