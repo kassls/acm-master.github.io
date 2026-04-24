@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>ACMer 核心控制台 - 视界极客版 v7.0</title>
+  <title>ACMer 核心控制台 - 视界极客版 v8.0</title>
   
   <!-- 稳定 CDN 节点，防国内屏蔽 -->
   <script src="https://cdn.tailwindcss.com"></script>
@@ -120,7 +120,7 @@
       box-shadow: 0 8px 32px 0 rgba(0, 0, 0, 0.5);
     }
 
-    /* === Markdown 极客渲染体系 (终极复活版，绝不丢失代码) === */
+    /* === Markdown 极客渲染体系 (绝对稳定且融合毛玻璃) === */
     .md-prose { color: #e2e8f0; font-size: 1.05rem; line-height: 1.8; word-break: break-word; }
     .md-prose h1, .md-prose h2, .md-prose h3 { color: #ffffff; font-family: 'Rajdhani', sans-serif; font-weight: 700; margin-top: 1.5em; margin-bottom: 0.5em; letter-spacing: 0.5px; }
     .md-prose h1 { font-size: 2.25rem; border-bottom: 2px solid rgba(6, 182, 212, 0.4); padding-bottom: 0.3em; }
@@ -130,14 +130,15 @@
     .md-prose ul { list-style-type: disc; padding-left: 1.5em; }
     .md-prose ol { list-style-type: decimal; padding-left: 1.5em; }
     
+    /* 独立短代码高亮 */
     .md-prose code:not(pre code) { 
       font-family: 'Fira Code', monospace; background: rgba(217, 70, 239, 0.15); color: #f472b6; 
       padding: 0.2em 0.4em; border-radius: 4px; font-size: 0.9em; 
     }
     
-    /* 强力接管外层 pre，赋予完美毛玻璃 */
+    /* 代码块父容器赋予毛玻璃 */
     .md-prose pre { 
-      background: rgba(15, 20, 30, 0.5) !important; 
+      background: rgba(15, 20, 30, 0.6) !important; 
       backdrop-filter: blur(12px);
       -webkit-backdrop-filter: blur(12px);
       border: 1px solid rgba(6, 182, 212, 0.25);
@@ -148,8 +149,8 @@
       margin: 1.5em 0; 
     }
     
-    /* 解除对内部元素的强制颜色覆盖，将渲染大权交还给 Dracula 原生类 */
-    .md-prose pre code.hljs { 
+    /* 允许 Highlight.js 的原色不受干扰地透出 */
+    .md-prose pre code { 
       background: transparent !important; 
       padding: 0 !important; 
       font-family: 'Fira Code', monospace; 
@@ -173,33 +174,16 @@
       Plus, FileText, Upload, ArrowLeft, TerminalSquare, Trash2, Target, Zap, Clock
     } from 'https://esm.sh/lucide-react@0.263.1';
 
-    // ==========================================
-    // 核心修复：坚不可摧的 Marked 与 HLJS 绑定
-    // ==========================================
+    // 核心修复：安全配置 Marked，绝不在解析期进行高亮挂载，防止崩溃！
     if (typeof window.marked !== 'undefined') {
       window.marked.setOptions({
         breaks: true,
-        gfm: true,
-        langPrefix: 'hljs language-', // 强制标准语法前缀
-        highlight: function(code, lang) {
-          if (window.hljs) {
-            try {
-              if (lang && window.hljs.getLanguage(lang)) {
-                return window.hljs.highlight(code, { language: lang, ignoreIllegals: true }).value;
-              }
-              return window.hljs.highlightAuto(code).value;
-            } catch (e) {
-              console.warn("HLJS 解析轻微异常，回退纯文本:", e);
-              return code;
-            }
-          }
-          return code;
-        }
+        gfm: true
       });
     }
 
     // ==========================================
-    // 终极 VFX 引擎：无垠漩涡星云 & 卡冈图雅黑洞
+    // 终极 VFX 引擎：无垠螺旋星云 & 真实电影级黑洞
     // ==========================================
     const VfxEngine = ({ isGodMode, burstTrigger }) => {
       const canvasRef = useRef(null);
@@ -214,57 +198,37 @@
         let burstMultiplier = 1;
 
         // ----------------------------------------------------
-        // 模式 A：永恒银河漩涡 (< 10 题)
-        // 绝对不会消失，固定轨道的彩色阿基米德螺旋
+        // 模式 A：永恒螺旋星系 (< 10 题)
+        // 绝不消失、纯粹平滑旋转的阿基米德旋臂
         // ----------------------------------------------------
-        const arms = 4; // 4条清晰的星系旋臂
-        const galaxyStars = Array.from({ length: 8000 }, () => {
-          const r = Math.pow(Math.random(), 1.5) * w; // 集中在中心，向外发散
-          const armOffset = (Math.floor(Math.random() * arms) * Math.PI * 2) / arms;
-          // 半径越大，角度偏移越多，形成螺旋状
-          const angle = armOffset + (r / w) * Math.PI * 3 + (Math.random() - 0.5) * 1.5;
-          
+        const arms = 3;
+        const galaxyStars = Array.from({ length: 5000 }, () => {
+          const armIndex = Math.floor(Math.random() * arms);
+          const armAngle = (armIndex * 2 * Math.PI) / arms;
+          const radius = Math.random() * w; // 分布在整个屏幕
+          const spiralOffset = radius * 0.004; // 越远越弯曲
+          const scatter = (Math.random() - 0.5) * (80 + radius * 0.15); // 星云的厚度
+
           return {
-            r: r,
-            angle: angle,
-            // 内圈快，外圈极慢，永恒公转
-            speed: 0.0002 + 0.001 * (1 - Math.min(r / w, 1)), 
+            r: radius,
+            angle: armAngle + spiralOffset,
+            scatterX: Math.cos(armAngle) * scatter,
+            scatterY: Math.sin(armAngle) * scatter,
             size: Math.random() * 1.5 + 0.5,
-            // 绝美色彩：从中心的璀璨(220)到青色(180)到外围的深紫(280)
-            hue: 180 + (r / w) * 100 + Math.random() * 30,
-            light: 50 + Math.random() * 30
+            speed: 0.001 + 0.003 / (1 + radius * 0.005), // 开普勒式速度：内快外慢
+            hue: 190 + radius * 0.05 // 中心偏青，外围偏紫
           };
         });
 
         // ----------------------------------------------------
-        // 模式 B：卡冈图雅 黑洞 (>= 10 题)
-        // 彻底抛弃粒子连线隧道，构建极其震撼的黑洞吸积盘与引力透镜
+        // 星空背景 (仅在黑洞模式下被引力透镜扭曲)
         // ----------------------------------------------------
-        const bhRadius = Math.min(w, h) * 0.15; // 视界半径
-        
-        // 星空背景 (被黑洞缓慢吸入)
-        const bgStars = Array.from({ length: 400 }, () => ({
+        const bgStars = Array.from({ length: 800 }, () => ({
           x: (Math.random() - 0.5) * w * 2,
           y: (Math.random() - 0.5) * h * 2,
-          size: Math.random() * 1.5 + 0.5
+          size: Math.random() * 1.5 + 0.5,
+          alpha: Math.random() * 0.8 + 0.2
         }));
-
-        // 黑洞吸积盘粒子群
-        const diskParticles = Array.from({ length: 6000 }, () => {
-          // 非线性分布：在视界边缘极度密集
-          const r = bhRadius + Math.pow(Math.random(), 3) * (w * 0.6);
-          const distRatio = Math.max(0, Math.min((r - bhRadius) / (w * 0.4), 1));
-          return {
-            r: r,
-            angle: Math.random() * Math.PI * 2,
-            // 开普勒旋转定律：越靠近视界速度越快，几乎光速
-            speed: 0.005 + 0.04 * Math.pow(bhRadius / r, 1.5),
-            // 色彩：视界边缘是极高温的炽热亮金/白(40)，向外衰减为深红和暗紫(0~320)
-            hue: 40 - distRatio * 80, 
-            light: 70 - distRatio * 50,
-            size: Math.random() * 2 + 0.5
-          };
-        });
 
         const animate = () => {
           time++;
@@ -273,123 +237,134 @@
 
           if (isGodMode) {
             // ==========================================
-            // 渲染：卡冈图雅黑洞
+            // 渲染：Gargantua 真实电影级黑洞 (无粒子，全图形学)
             // ==========================================
-            // 1. 深邃的残影底色
-            ctx.fillStyle = `rgba(1, 2, 5, ${0.4 / burstMultiplier})`;
+            // 60% 屏幕宽度的震撼视界
+            const bhRadius = Math.min(w, h) * 0.30; 
+
+            ctx.fillStyle = `rgba(1, 2, 5, 1)`; // 漆黑宇宙背景
             ctx.fillRect(0, 0, w, h);
 
-            // 2. 绘制背景被引力拖拽的星辰
+            // 1. 渲染背景星辰 (并在黑洞周围产生引力透镜偏折)
             ctx.globalCompositeOperation = 'lighter';
             bgStars.forEach(s => {
-               const dx = cx - s.x; const dy = cy - s.y;
-               const dist = Math.sqrt(dx*dx + dy*dy);
-               if (dist > bhRadius) {
-                 // 引力公式
-                 s.x += (dx / dist) * 1.5 * (500 / dist);
-                 s.y += (dy / dist) * 1.5 * (500 / dist);
-                 ctx.fillStyle = 'rgba(255, 255, 255, 0.4)';
-                 ctx.fillRect(s.x, s.y, s.size, s.size);
-               } else {
-                 // 被黑洞吞噬后在外太空重生
-                 s.x = cx + (Math.random() - 0.5) * w * 2;
-                 s.y = cy + (Math.random() - 0.5) * h * 2;
+               let dx = s.x - cx; let dy = s.y - cy;
+               let dist = Math.sqrt(dx*dx + dy*dy);
+               let drawX = cx + dx; let drawY = cy + dy;
+
+               if (dist > bhRadius && dist < bhRadius * 4) {
+                   // 引力透镜方程：光线弯折放大
+                   let deflect = (bhRadius * bhRadius) / (dist * 1.2);
+                   drawX += (dx / dist) * deflect;
+                   drawY += (dy / dist) * deflect;
+                   ctx.fillStyle = `rgba(255, 255, 255, ${s.alpha})`;
+                   ctx.fillRect(drawX, drawY, s.size, s.size);
+               } else if (dist >= bhRadius * 4) {
+                   ctx.fillStyle = `rgba(255, 255, 255, ${s.alpha})`;
+                   ctx.fillRect(drawX, drawY, s.size, s.size);
                }
+               // 星空整体极其缓慢的自转
+               let angle = Math.atan2(dy, dx) + 0.0002;
+               s.x = cx + Math.cos(angle) * dist;
+               s.y = cy + Math.sin(angle) * dist;
             });
 
             ctx.save();
             ctx.translate(cx, cy);
+            
+            // 整体黑洞体系微微转动，增加生命力
+            ctx.rotate(Math.sin(time * 0.002) * 0.03);
 
-            // 更新所有吸积盘粒子的角度
-            diskParticles.forEach(p => { p.angle += p.speed; });
+            // 2. 引力透镜顶部光环 (Top Lensed Halo)
+            const topGradient = ctx.createRadialGradient(0, -bhRadius*0.1, bhRadius*0.8, 0, -bhRadius, bhRadius*2.2);
+            topGradient.addColorStop(0, 'rgba(255, 200, 100, 0)');
+            topGradient.addColorStop(0.3, 'rgba(255, 230, 150, 0.8)');
+            topGradient.addColorStop(0.6, 'rgba(200, 100, 50, 0.4)');
+            topGradient.addColorStop(1, 'rgba(0, 0, 0, 0)');
 
-            // 3. 绘制引力透镜的伪装 (Lensed Halo)
-            // 原理：黑洞背后的吸积盘光线，被引力弯折到了黑洞的顶部和底部
+            ctx.beginPath();
+            ctx.ellipse(0, 0, bhRadius * 1.35, bhRadius * 1.35, 0, Math.PI, 0); 
+            ctx.lineWidth = bhRadius * 0.4;
+            ctx.strokeStyle = topGradient;
+            ctx.stroke();
+
+            // 3. 引力透镜底部光环 (Bottom Lensed Halo)
+            const botGradient = ctx.createRadialGradient(0, bhRadius*0.1, bhRadius*0.8, 0, bhRadius, bhRadius*2.2);
+            botGradient.addColorStop(0, 'rgba(255, 200, 100, 0)');
+            botGradient.addColorStop(0.3, 'rgba(255, 200, 120, 0.5)');
+            botGradient.addColorStop(0.6, 'rgba(150, 60, 20, 0.2)');
+            botGradient.addColorStop(1, 'rgba(0, 0, 0, 0)');
+
+            ctx.beginPath();
+            ctx.ellipse(0, 0, bhRadius * 1.25, bhRadius * 1.25, 0, 0, Math.PI); 
+            ctx.lineWidth = bhRadius * 0.3;
+            ctx.strokeStyle = botGradient;
+            ctx.stroke();
+
+            // 4. 光子环 (Photon Ring) - 黑洞事件视界边缘的极致亮光
             ctx.globalCompositeOperation = 'screen';
-            diskParticles.forEach(p => {
-               const sin = Math.sin(p.angle);
-               const cos = Math.cos(p.angle);
-               const y = sin * p.r * 0.25; // 吸积盘透视压扁
+            ctx.beginPath();
+            ctx.arc(0, 0, bhRadius + 1, 0, Math.PI * 2);
+            ctx.lineWidth = 5;
+            ctx.strokeStyle = 'rgba(255, 255, 200, 0.9)';
+            ctx.shadowBlur = 20;
+            ctx.shadowColor = 'rgba(255, 180, 50, 1)';
+            ctx.stroke();
+            ctx.shadowBlur = 0; // 重置阴影
 
-               if (sin < 0) {
-                 // 位于黑洞背后的粒子：在顶部产生极其明亮的引力透镜光弧
-                 const lensedX = cos * p.r * 0.8; // 横向稍微收束
-                 const lensedY = -bhRadius - Math.pow(p.r - bhRadius, 0.7) * 0.6 + y * 0.1;
-                 // 只有在视界外的光才能被看到
-                 if (lensedX*lensedX + lensedY*lensedY > bhRadius*bhRadius) {
-                   ctx.fillStyle = `hsla(${p.hue}, 100%, ${p.light}%, 0.45)`;
-                   ctx.fillRect(lensedX, lensedY, p.size, p.size);
-                 }
-               } else {
-                 // 前面的粒子在底部也产生微弱的引力偏折
-                 const lensedX = cos * p.r * 0.8;
-                 const lensedY = bhRadius + Math.pow(p.r - bhRadius, 0.7) * 0.6 + y * 0.1;
-                 if (lensedX*lensedX + lensedY*lensedY > bhRadius*bhRadius) {
-                   ctx.fillStyle = `hsla(${p.hue}, 100%, ${p.light}%, 0.15)`;
-                   ctx.fillRect(lensedX, lensedY, p.size, p.size);
-                 }
-               }
-            });
-
-            // 4. 绘制吸积盘的后半部分 (被黑洞遮挡前的底座)
-            diskParticles.forEach(p => {
-               if (Math.sin(p.angle) < 0) {
-                 const x = Math.cos(p.angle) * p.r;
-                 const y = Math.sin(p.angle) * p.r * 0.25;
-                 ctx.fillStyle = `hsla(${p.hue}, 100%, ${p.light}%, 0.7)`;
-                 ctx.fillRect(x, y, p.size, p.size);
-               }
-            });
-
-            // 5. 绘制视界 (Event Horizon - 绝对的黑体)
+            // 5. 事件视界 (Event Horizon) - 绝对的深渊
             ctx.globalCompositeOperation = 'source-over';
             ctx.beginPath();
             ctx.arc(0, 0, bhRadius, 0, Math.PI * 2);
             ctx.fillStyle = '#000000';
-            
-            // 为黑洞边缘添加光子环 (Photon Ring) 的外发光
-            ctx.shadowBlur = 40;
-            ctx.shadowColor = 'rgba(255, 120, 30, 0.9)';
+            ctx.fill();
+
+            // 6. 前景吸积盘 (Accretion Disk) - 贯穿黑洞的高能明亮物质盘
+            ctx.globalCompositeOperation = 'screen';
+            const diskWidth = w * 0.75; // 极宽，延展到屏幕边缘
+            const diskHeight = bhRadius * 0.12; // 极扁平
+
+            const diskGradient = ctx.createRadialGradient(0, 0, bhRadius * 0.5, 0, 0, diskWidth);
+            diskGradient.addColorStop(0, 'rgba(255, 255, 255, 1)');      // 核心极致白光
+            diskGradient.addColorStop(0.2, 'rgba(255, 220, 150, 0.9)');  // 炽热黄光
+            diskGradient.addColorStop(0.5, 'rgba(200, 80, 20, 0.7)');    // 高温红橙
+            diskGradient.addColorStop(0.8, 'rgba(50, 10, 20, 0.3)');     // 暗弱星尘
+            diskGradient.addColorStop(1, 'rgba(0, 0, 0, 0)');            // 消散
+
+            ctx.beginPath();
+            ctx.ellipse(0, 0, diskWidth, diskHeight, 0, 0, Math.PI * 2);
+            ctx.fillStyle = diskGradient;
+            ctx.fill();
+
+            // 7. 吸积盘的核心极亮光带
+            ctx.beginPath();
+            ctx.ellipse(0, 0, diskWidth * 0.7, diskHeight * 0.3, 0, 0, Math.PI * 2);
+            ctx.fillStyle = 'rgba(255, 255, 255, 0.7)';
+            ctx.shadowBlur = 30;
+            ctx.shadowColor = 'rgba(255, 200, 100, 1)';
             ctx.fill();
             ctx.shadowBlur = 0;
-
-            // 绘制炽热的光子环实体边缘
-            ctx.beginPath();
-            ctx.arc(0, 0, bhRadius + 1, 0, Math.PI * 2);
-            ctx.lineWidth = 2;
-            ctx.strokeStyle = 'rgba(255, 230, 150, 0.8)';
-            ctx.stroke();
-
-            // 6. 绘制吸积盘的前半部分 (横跨在黑洞正前方，最明亮)
-            ctx.globalCompositeOperation = 'screen';
-            diskParticles.forEach(p => {
-               if (Math.sin(p.angle) >= 0) {
-                 const x = Math.cos(p.angle) * p.r;
-                 const y = Math.sin(p.angle) * p.r * 0.25;
-                 // 前景吸积盘极度耀眼
-                 ctx.fillStyle = `hsla(${p.hue}, 100%, ${p.light + 20}%, 1)`;
-                 ctx.fillRect(x, y, p.size * 1.5, p.size * 1.5);
-               }
-            });
 
             ctx.restore();
 
           } else {
             // ==========================================
-            // 渲染：永恒银河漩涡
+            // 渲染：永恒螺旋星系
             // ==========================================
-            // 超高残留形成极长的星轨拖尾
+            // 极长残影清理
             ctx.fillStyle = `rgba(3, 5, 10, ${0.1 / burstMultiplier})`; 
             ctx.fillRect(0, 0, w, h);
             ctx.globalCompositeOperation = 'lighter';
             
             galaxyStars.forEach(p => {
-              p.angle += p.speed; // 永远自转，绝不重置半径
+              p.angle += p.speed; // 永不停止的旋臂运动
               
-              const x = cx + Math.cos(p.angle) * p.r;
-              const y = cy + Math.sin(p.angle) * p.r * 0.8; // 轻微的 3D 俯视视角
+              // 结合轨道的固定半径和旋臂的散射度，计算完美坐标
+              const x = cx + Math.cos(p.angle) * p.r + p.scatterX;
+              // 稍微倾斜视角，让星系呈扁平状
+              const y = cy + Math.sin(p.angle) * p.r * 0.6 + p.scatterY; 
               
-              ctx.fillStyle = `hsla(${p.hue}, 100%, ${p.light}%, 0.8)`;
+              ctx.fillStyle = `hsla(${p.hue}, 100%, 75%, 0.8)`;
               ctx.fillRect(x, y, p.size, p.size);
             });
           }
@@ -418,9 +393,17 @@
       const [showBgSettings, setShowBgSettings] = useState(false);
 
       useEffect(() => {
-        // MD解析交给 marked 底层，这里仅处理公式
-        if (contentRef.current && window.MathJax && window.MathJax.typesetPromise) { 
-          window.MathJax.typesetPromise([contentRef.current]).catch((err) => console.log(err)); 
+        // MD 内容注入 DOM 后，安全执行高亮渲染与公式排版！
+        if (contentRef.current) {
+          if (window.hljs) {
+            contentRef.current.querySelectorAll('pre code').forEach((block) => {
+              block.removeAttribute('data-highlighted'); // 清除旧状态
+              window.hljs.highlightElement(block);       // 执行原生高亮
+            });
+          }
+          if (window.MathJax && window.MathJax.typesetPromise) { 
+            window.MathJax.typesetPromise([contentRef.current]).catch(console.error); 
+          }
         }
       }, [problem]);
 
@@ -442,16 +425,18 @@
         reader.readAsDataURL(file);
       };
 
-      // 绝对稳健的 Markdown 渲染，永不白屏
+      // 绝对稳健的 Markdown 到 HTML 转换
       const getMarkdownHtml = () => {
+        if (!problem || !problem.markdown) return '<p class="text-slate-500 font-mono">> *无记录数据*</p>';
         try {
-          if (typeof window.marked !== 'undefined' && problem.markdown) {
+          if (typeof window.marked !== 'undefined') {
             return window.marked.parse(problem.markdown);
           }
         } catch (error) {
           console.error('Markdown 引擎执行失败:', error);
         }
-        return `<pre style="white-space: pre-wrap; font-family: monospace;">${problem.markdown || '> *无记录数据*'}</pre>`;
+        // 如果引擎崩溃，安全回退到纯文本模式，保证不白屏
+        return `<pre style="white-space: pre-wrap; font-family: monospace;">${problem.markdown}</pre>`;
       };
 
       return (
@@ -644,7 +629,7 @@
                   <h1 className="text-2xl md:text-3xl font-sci-fi font-black text-white tracking-widest uppercase">
                     ACMer <span className={isGodMode ? 'text-fuchsia-400 drop-shadow-[0_0_10px_#d946ef]' : 'text-cyan-400'}>NEXUS</span>
                   </h1>
-                  <p className="text-slate-500 text-xs font-mono tracking-widest mt-1">v7.0 // GARGANTUA_ENGINE</p>
+                  <p className="text-slate-500 text-xs font-mono tracking-widest mt-1">v8.0 // GARGANTUA_ENGINE</p>
                 </div>
               </div>
               <div className="text-right hidden md:block relative z-10">
