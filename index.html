@@ -3,9 +3,10 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>ACMer 核心控制台 - 赛博飞升版</title>
+  <title>ACMer 核心控制台 - 量子飞升版</title>
   
-  <script src="https://cdn.tailwindcss.com?plugins=typography"></script>
+  <!-- 移除 typography 插件，改为手写纯净排版 -->
+  <script src="https://cdn.tailwindcss.com"></script>
   <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
   <script src="https://cdn.jsdelivr.net/npm/marked/marked.min.js"></script>
   
@@ -21,33 +22,30 @@
   <script id="MathJax-script" async src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-mml-chtml.js"></script>
 
   <style>
-    @import url('https://fonts.googleapis.com/css2?family=Rajdhani:wght@500;700;900&display=swap');
+    @import url('https://fonts.googleapis.com/css2?family=Rajdhani:wght@500;700;900&family=Fira+Code:wght@400;600&display=swap');
 
-    /* 全局滚动条美化 */
+    /* === 基础与滚动条 === */
     ::-webkit-scrollbar { width: 6px; height: 6px; }
     ::-webkit-scrollbar-track { background: rgba(0, 0, 0, 0.8); }
     ::-webkit-scrollbar-thumb { background: rgba(6, 182, 212, 0.8); border-radius: 0px; }
-    ::-webkit-scrollbar-thumb:hover { background: rgba(239, 68, 68, 1); }
-
-    /* 科幻字体应用于关键标题 */
+    ::-webkit-scrollbar-thumb:hover { background: rgba(217, 70, 239, 1); }
     .font-sci-fi { font-family: 'Rajdhani', sans-serif; }
 
-    /* === 瞬间爆发特效动画 === */
+    /* === 瞬间爆发特效动画 (飞升版) === */
     @keyframes screen-flash {
       0% { opacity: 1; background: #ffffff; }
-      10% { opacity: 0.8; background: #ff2a2a; }
+      10% { opacity: 0.8; background: #d946ef; } /* 炫紫色爆闪 */
       100% { opacity: 0; background: transparent; }
     }
     @keyframes shockwave-expand {
-      0% { transform: scale(0); opacity: 1; border-width: 50px; }
-      100% { transform: scale(10); opacity: 0; border-width: 0px; }
+      0% { transform: scale(0); opacity: 1; border-width: 60px; border-color: rgba(217, 70, 239, 1); }
+      100% { transform: scale(15); opacity: 0; border-width: 0px; border-color: rgba(6, 182, 212, 0.5); }
     }
     .animate-flash { animation: screen-flash 1.5s cubic-bezier(0.16, 1, 0.3, 1) forwards; }
     .animate-shockwave {
       position: fixed; top: 50%; left: 50%;
       width: 20vw; height: 20vw; margin-top: -10vw; margin-left: -10vw;
-      border: 0px solid rgba(255, 50, 50, 0.8);
-      border-radius: 50%; pointer-events: none; z-index: 9999;
+      border: 0px solid transparent; border-radius: 50%; pointer-events: none; z-index: 9999;
       animation: shockwave-expand 1.2s cubic-bezier(0.1, 0.8, 0.3, 1) forwards;
     }
 
@@ -58,55 +56,79 @@
       border: 1px solid rgba(6, 182, 212, 0.3);
       position: relative;
     }
-    /* HUD 切角特效 */
-    .hud-clip {
-      clip-path: polygon(0 0, calc(100% - 20px) 0, 100% 20px, 100% 100%, 20px 100%, 0 calc(100% - 20px));
-    }
-    .hud-clip-red {
-      border-color: rgba(239, 68, 68, 0.6);
-      box-shadow: 0 0 30px rgba(239, 68, 68, 0.2) inset;
+    .hud-clip { clip-path: polygon(0 0, calc(100% - 20px) 0, 100% 20px, 100% 100%, 20px 100%, 0 calc(100% - 20px)); }
+    .hud-clip-ascended {
+      border-color: rgba(217, 70, 239, 0.6); /* 飞升紫 */
+      box-shadow: 0 0 40px rgba(217, 70, 239, 0.3) inset;
     }
 
-    /* 能量槽斜纹动画 */
+    /* === 能量槽与动态流光 === */
     @keyframes progress-stripes {
       0% { background-position: 0 0; }
       100% { background-position: 40px 0; }
     }
+    @keyframes gradient-flow {
+      0% { background-position: 0% 50%; }
+      50% { background-position: 100% 50%; }
+      100% { background-position: 0% 50%; }
+    }
     .energy-bar-stripes {
-      background-image: linear-gradient(45deg, rgba(255,255,255,0.15) 25%, transparent 25%, transparent 50%, rgba(255,255,255,0.15) 50%, rgba(255,255,255,0.15) 75%, transparent 75%, transparent);
+      background-image: linear-gradient(45deg, rgba(255,255,255,0.2) 25%, transparent 25%, transparent 50%, rgba(255,255,255,0.2) 50%, rgba(255,255,255,0.2) 75%, transparent 75%, transparent);
       background-size: 40px 40px;
       animation: progress-stripes 1s linear infinite;
     }
+    /* 飞升形态专属动态渐变条 */
+    .bg-ascended-flow {
+      background: linear-gradient(90deg, #d946ef, #8b5cf6, #06b6d4, #f59e0b, #d946ef);
+      background-size: 300% 100%;
+      animation: gradient-flow 3s ease infinite;
+    }
 
-    /* 背景网格扫描线 */
     .scanlines {
-      background: linear-gradient(to bottom, rgba(255,255,255,0), rgba(255,255,255,0) 50%, rgba(0,0,0,0.1) 50%, rgba(0,0,0,0.1));
-      background-size: 100% 4px;
-      position: absolute; inset: 0; pointer-events: none; opacity: 0.3;
+      background: linear-gradient(to bottom, rgba(255,255,255,0), rgba(255,255,255,0) 50%, rgba(0,0,0,0.15) 50%, rgba(0,0,0,0.15));
+      background-size: 100% 4px; position: absolute; inset: 0; pointer-events: none; opacity: 0.4;
     }
 
-    /* MD 阅读舱专属毛玻璃 */
+    /* === 专属阅读舱与极致 MD 排版 === */
     .reader-glass {
-      background: rgba(10, 15, 25, 0.4);
-      backdrop-filter: blur(25px) saturate(180%);
-      -webkit-backdrop-filter: blur(25px) saturate(180%);
+      background: rgba(10, 15, 25, 0.5);
+      backdrop-filter: blur(30px) saturate(200%);
+      -webkit-backdrop-filter: blur(30px) saturate(200%);
       border: 1px solid rgba(255, 255, 255, 0.1);
-      box-shadow: 0 8px 32px 0 rgba(0, 0, 0, 0.5);
+      box-shadow: 0 10px 50px 0 rgba(0, 0, 0, 0.6);
     }
 
-    /* Markdown 内部排版优化 */
-    .prose pre { 
-      background: rgba(0, 0, 0, 0.6) !important; 
-      backdrop-filter: blur(10px);
-      padding: 0 !important; margin-top: 1.5em; margin-bottom: 1.5em; border-radius: 0px; border-left: 3px solid #67e8f9; 
+    /* 纯净定制版 Markdown 样式 */
+    .md-prose { color: #e2e8f0; font-size: 1.05rem; line-height: 1.8; word-break: break-word; }
+    .md-prose h1, .md-prose h2, .md-prose h3, .md-prose h4 { color: #ffffff; font-family: 'Rajdhani', sans-serif; font-weight: 700; margin-top: 1.8em; margin-bottom: 0.8em; letter-spacing: 0.5px; }
+    .md-prose h1 { font-size: 2.25rem; border-bottom: 2px solid rgba(6, 182, 212, 0.4); padding-bottom: 0.3em; }
+    .md-prose h2 { font-size: 1.75rem; border-bottom: 1px solid rgba(255, 255, 255, 0.1); padding-bottom: 0.3em; }
+    .md-prose h3 { font-size: 1.35rem; color: #67e8f9; }
+    .md-prose p { margin-bottom: 1.2em; }
+    .md-prose ul { list-style-type: disc; padding-left: 1.5em; margin-bottom: 1.2em; color: #cbd5e1; }
+    .md-prose ol { list-style-type: decimal; padding-left: 1.5em; margin-bottom: 1.2em; color: #cbd5e1; }
+    .md-prose li { margin-bottom: 0.4em; }
+    .md-prose strong { color: #f8fafc; font-weight: 700; }
+    /* 极致高级的行内代码与引用块 */
+    .md-prose code { 
+      font-family: 'Fira Code', monospace; background: rgba(217, 70, 239, 0.15); color: #f472b6; 
+      padding: 0.2em 0.4em; border-radius: 4px; font-size: 0.9em; 
     }
-    .prose code { color: #67e8f9 !important; font-family: ui-monospace, monospace; }
-    .prose pre code { color: inherit !important; padding: 1rem !important; display: block; overflow-x: auto; background: transparent !important; }
-    .prose p, .prose li { color: #cbd5e1 !important; line-height: 1.8; }
-    .prose h1, .prose h2, .prose h3 { color: #f8fafc !important; font-weight: 900; border-bottom: 1px solid rgba(255,255,255,0.1); padding-bottom: 0.5rem; font-family: 'Rajdhani', sans-serif; letter-spacing: 1px;}
+    .md-prose pre { 
+      background: #1e1e2e; padding: 1.2em; border-radius: 8px; overflow-x: auto; 
+      margin: 1.5em 0; border: 1px solid rgba(255,255,255,0.05); box-shadow: 0 4px 6px rgba(0,0,0,0.3); 
+    }
+    .md-prose pre code { background: transparent; padding: 0; color: inherit; font-size: 0.9em; }
+    .md-prose blockquote { 
+      border-left: 4px solid #d946ef; background: linear-gradient(90deg, rgba(217,70,239,0.1) 0%, transparent 100%);
+      padding: 1em 1.5em; margin: 1.5em 0; color: #94a3b8; font-style: italic; border-radius: 0 8px 8px 0;
+    }
+    .md-prose a { color: #38bdf8; text-decoration: none; border-bottom: 1px solid transparent; transition: all 0.3s; }
+    .md-prose a:hover { color: #7dd3fc; border-bottom: 1px solid #7dd3fc; text-shadow: 0 0 8px rgba(56, 189, 248, 0.5); }
+    .md-prose img { max-width: 100%; border-radius: 8px; border: 1px solid rgba(255,255,255,0.1); margin: 1.5em 0; }
   </style>
 </head>
-<body class="bg-[#050505] text-slate-200 overflow-x-hidden selection:bg-cyan-500/30">
+<body class="bg-[#030305] text-slate-200 overflow-x-hidden selection:bg-fuchsia-500/30">
   <div id="root"></div>
 
   <script type="text/babel" data-type="module">
@@ -118,8 +140,11 @@
       X, Plus, FileText, Upload, ArrowLeft, TerminalSquare, Trash2, Target, Zap
     } from 'https://esm.sh/lucide-react@0.263.1';
 
+    // 初始化 Marked 选项，解决换行与 GFM 支持
+    marked.setOptions({ breaks: true, gfm: true });
+
     // ==========================================
-    // 究极特效：星云漩涡核心 (Vortex Core)
+    // 量子星云核心 (Quantum Vortex) - 炫彩与螺旋运动
     // ==========================================
     const VortexBackground = ({ isGodMode, burstTrigger }) => {
       const canvasRef = useRef(null);
@@ -131,10 +156,9 @@
         let height = canvas.height = window.innerHeight;
 
         const particles = [];
-        const particleCount = 400; // 粒子数量
-        
-        // 爆发时的额外速度倍率
+        const particleCount = 450; 
         let burstMultiplier = 1;
+        let globalTime = 0;
 
         class Particle {
           constructor() {
@@ -144,45 +168,47 @@
           }
           reset() {
             this.angle = Math.random() * Math.PI * 2;
-            this.radius = Math.random() * 50; // 从核心生成
+            this.radius = Math.random() * 40; 
             this.speed = (Math.random() * 2 + 0.5);
             this.size = Math.random() * 2.5 + 0.5;
-            this.life = 1;
+            this.colorOffset = Math.random() * 360;
           }
-          update(isGodMode, multiplier) {
-            // 轨道旋转速度
-            this.angle += (isGodMode ? 0.05 : 0.005) * multiplier;
-            // 向外扩散速度
-            this.radius += (isGodMode ? this.speed * 4 : this.speed * 0.5) * multiplier;
+          update(isGodMode, multiplier, time) {
+            if (isGodMode) {
+              // 飞升模式：复杂的螺旋波纹路径
+              this.angle += (0.02 + Math.sin(this.radius * 0.01 + time * 0.05) * 0.03) * multiplier;
+              this.radius += this.speed * 2.5 * multiplier;
+            } else {
+              // 基础模式：平稳涡流
+              this.angle += 0.005 * multiplier;
+              this.radius += this.speed * 0.5 * multiplier;
+            }
             
             this.x = width / 2 + Math.cos(this.angle) * this.radius;
             this.y = height / 2 + Math.sin(this.angle) * this.radius;
 
-            if (this.radius > (width > height ? width : height)) {
-              this.reset();
-            }
+            if (this.radius > (width > height ? width : height)) this.reset();
           }
-          draw(ctx, isGodMode) {
+          draw(ctx, isGodMode, time) {
             ctx.beginPath();
             ctx.arc(this.x, this.y, this.size, 0, Math.PI * 2);
             
-            // 距离核心越远越透明
             const alpha = Math.max(0, 1 - (this.radius / (width * 0.6)));
             
             if (isGodMode) {
-              // 猩红/橙色渐变
-              const hue = 10 + (this.radius % 40); 
-              ctx.fillStyle = `hsla(${hue}, 100%, 60%, ${alpha})`;
-              ctx.shadowColor = `hsla(${hue}, 100%, 50%, 0.8)`;
+              // 七彩流光：基于时间、半径和粒子专属偏移量计算 Hue
+              const hue = (time * 2 + this.radius * 0.5 + this.colorOffset) % 360;
+              ctx.fillStyle = `hsla(${hue}, 100%, 65%, ${alpha})`;
+              ctx.shadowColor = `hsla(${hue}, 100%, 55%, 0.8)`;
             } else {
-              // 深空青蓝色
+              // 赛博青
               const hue = 190 + (this.radius % 30);
               ctx.fillStyle = `hsla(${hue}, 100%, 60%, ${alpha})`;
               ctx.shadowColor = `hsla(${hue}, 100%, 50%, 0.8)`;
             }
             ctx.shadowBlur = isGodMode ? 15 : 5;
             ctx.fill();
-            ctx.shadowBlur = 0; // 重置
+            ctx.shadowBlur = 0;
           }
         }
 
@@ -190,40 +216,43 @@
 
         let animationId;
         const animate = () => {
-          // 残影效果
-          ctx.fillStyle = isGodMode ? 'rgba(5, 0, 0, 0.15)' : 'rgba(0, 5, 10, 0.2)';
+          globalTime += 1;
+          ctx.fillStyle = isGodMode ? 'rgba(5, 2, 8, 0.2)' : 'rgba(2, 5, 10, 0.2)';
           ctx.fillRect(0, 0, width, height);
 
-          // 爆发衰减逻辑
-          if (burstMultiplier > 1) burstMultiplier *= 0.95;
+          if (burstMultiplier > 1) burstMultiplier *= 0.94;
           if (burstMultiplier < 1) burstMultiplier = 1;
 
-          // 绘制核心黑洞发光
-          const coreRadius = isGodMode ? 80 + Math.random()*20 : 40;
+          // 核心发光渲染
+          const coreRadius = isGodMode ? 90 + Math.sin(globalTime*0.1)*20 : 40;
           const gradient = ctx.createRadialGradient(width/2, height/2, 0, width/2, height/2, coreRadius * 4);
           if (isGodMode) {
-            gradient.addColorStop(0, `rgba(255, 0, 0, ${0.4 * burstMultiplier})`);
-            gradient.addColorStop(0.2, 'rgba(255, 80, 0, 0.2)');
+            // 飞升模式：紫粉色/金色核心叠加
+            const hueShift = (globalTime) % 360;
+            gradient.addColorStop(0, `hsla(${hueShift}, 100%, 60%, ${0.4 * burstMultiplier})`);
+            gradient.addColorStop(0.3, 'rgba(217, 70, 239, 0.2)');
             gradient.addColorStop(1, 'transparent');
           } else {
-            gradient.addColorStop(0, 'rgba(0, 200, 255, 0.2)');
+            gradient.addColorStop(0, 'rgba(6, 182, 212, 0.2)');
             gradient.addColorStop(1, 'transparent');
           }
           ctx.fillStyle = gradient;
           ctx.fillRect(0,0,width,height);
 
+          // 渲染粒子
+          ctx.globalCompositeOperation = isGodMode ? 'lighter' : 'source-over';
           particles.forEach(p => {
-            p.update(isGodMode, burstMultiplier);
-            p.draw(ctx, isGodMode);
+            p.update(isGodMode, burstMultiplier, globalTime);
+            p.draw(ctx, isGodMode, globalTime);
           });
+          ctx.globalCompositeOperation = 'source-over';
 
           animationId = requestAnimationFrame(animate);
         };
 
         animate();
 
-        // 监听爆发触发
-        if (burstTrigger) { burstMultiplier = 15; } // 赋予瞬间极高倍率
+        if (burstTrigger) { burstMultiplier = 15; } 
 
         const handleResize = () => {
           width = canvas.width = window.innerWidth;
@@ -231,10 +260,7 @@
         };
         window.addEventListener('resize', handleResize);
 
-        return () => {
-          cancelAnimationFrame(animationId);
-          window.removeEventListener('resize', handleResize);
-        };
+        return () => { cancelAnimationFrame(animationId); window.removeEventListener('resize', handleResize); };
       }, [isGodMode, burstTrigger]);
 
       return <canvas ref={canvasRef} className="fixed inset-0 z-0 pointer-events-none mix-blend-screen" />;
@@ -275,8 +301,8 @@
       return (
         <div className="min-h-screen relative font-sans animate-[fadeIn_0.3s_ease-out]">
           {bgImage ? (
-            <div className="fixed inset-0 z-0 bg-cover bg-center bg-no-repeat bg-fixed opacity-60" style={{ backgroundImage: `url(${bgImage})` }} />
-          ) : ( <div className="fixed inset-0 z-0 bg-slate-900" /> )}
+            <div className="fixed inset-0 z-0 bg-cover bg-center bg-no-repeat bg-fixed opacity-70" style={{ backgroundImage: `url(${bgImage})` }} />
+          ) : ( <div className="fixed inset-0 z-0 bg-[#08080c]" /> )}
 
           <div className="fixed top-0 left-0 right-0 z-50 reader-glass border-b border-cyan-500/30">
             <div className="max-w-5xl mx-auto px-4 h-16 flex items-center justify-between">
@@ -305,8 +331,8 @@
             )}
           </div>
 
-          <div className="relative z-10 pt-28 pb-20 px-4">
-            <div className="max-w-4xl mx-auto reader-glass p-8 md:p-12 shadow-2xl hud-clip border-t-4 border-cyan-500">
+          <div className="relative z-10 pt-28 pb-20 px-4 md:px-8">
+            <div className="max-w-4xl mx-auto reader-glass p-6 md:p-12 shadow-2xl hud-clip border-t-4 border-cyan-500">
               <div className="border-b border-slate-700/60 pb-6 mb-8">
                 <div className="flex items-center gap-3 mb-4 font-sci-fi">
                   <span className="px-3 py-1 bg-cyan-950 text-cyan-400 font-bold text-sm border border-cyan-800">{problem.platform}</span>
@@ -321,7 +347,7 @@
               </div>
               <div 
                 ref={contentRef}
-                className="prose prose-invert prose-cyan max-w-none prose-lg"
+                className="md-prose"
                 dangerouslySetInnerHTML={{ __html: marked.parse(problem.markdown || '> *该节点暂无详细记忆数据。*') }}
               />
             </div>
@@ -368,10 +394,8 @@
       // 监听题数变化，触发核爆特效
       useEffect(() => {
         setIsGodMode(todayCount >= 5);
-        // 只有从 <5 变成 >=5 时，才触发瞬间特效 (防止一刷新就亮瞎眼)
         if (prevCountRef.current < 5 && todayCount >= 5) {
           setFlashEffect(true);
-          // 1.5秒后移除闪光元素，保留背景红眼特效
           setTimeout(() => setFlashEffect(false), 1500);
         }
         prevCountRef.current = todayCount;
@@ -408,10 +432,15 @@
       const openReader = (problem) => { setViewingProblem(problem); setView('viewer'); window.scrollTo(0, 0); };
 
       const getStatusEffect = (count) => {
-        if (count === 0) return { label: 'SYSTEM SLEEPING // 系统休眠', color: 'text-slate-500', glow: '' };
-        if (count <= 2) return { label: 'ENGINE IGNITION // 引擎点火', color: 'text-cyan-400', glow: 'shadow-[0_0_30px_rgba(6,182,212,0.15)]' };
-        if (count <= 4) return { label: 'UNSTOPPABLE // 势不可挡', color: 'text-blue-400', glow: 'shadow-[0_0_40px_rgba(59,130,246,0.3)]' };
-        return { label: 'GOD MODE // 超神时刻', color: 'text-red-500', glow: 'hud-clip-red' };
+        if (count === 0) return { label: 'SYSTEM SLEEPING', color: 'text-slate-500', glow: '' };
+        if (count <= 2) return { label: 'ENGINE IGNITION', color: 'text-cyan-400', glow: 'shadow-[0_0_30px_rgba(6,182,212,0.15)]' };
+        if (count <= 4) return { label: 'UNSTOPPABLE', color: 'text-blue-400', glow: 'shadow-[0_0_40px_rgba(59,130,246,0.3)]' };
+        // 飞升状态：文字也是动态渐变色
+        return { 
+          label: 'QUANTUM ASCENDED', 
+          color: 'text-transparent bg-clip-text bg-gradient-to-r from-fuchsia-400 via-cyan-400 to-yellow-400 animate-pulse', 
+          glow: 'hud-clip-ascended' 
+        };
       };
       const currentStatus = getStatusEffect(todayCount);
 
@@ -445,12 +474,12 @@
             <header className="flex items-center justify-between hud-panel p-5 hud-clip">
               <div className="scanlines"></div>
               <div className="flex items-center gap-4 relative z-10">
-                <div className={`p-3 border ${isGodMode ? 'bg-red-950/50 border-red-500 text-red-500' : 'bg-cyan-950/50 border-cyan-500 text-cyan-400'}`}>
+                <div className={`p-3 border ${isGodMode ? 'bg-fuchsia-950/50 border-fuchsia-500 text-fuchsia-400 shadow-[0_0_20px_#d946ef]' : 'bg-cyan-950/50 border-cyan-500 text-cyan-400'}`}>
                   <TerminalSquare size={28} />
                 </div>
                 <div>
                   <h1 className="text-2xl md:text-3xl font-sci-fi font-black text-white tracking-widest uppercase">
-                    ACMer <span className={isGodMode ? 'text-red-500 drop-shadow-[0_0_10px_#ef4444]' : 'text-cyan-400'}>NEXUS</span>
+                    ACMer <span className={isGodMode ? 'text-fuchsia-400 drop-shadow-[0_0_10px_#d946ef]' : 'text-cyan-400'}>NEXUS</span>
                   </h1>
                   <p className="text-slate-500 text-xs font-mono tracking-widest mt-1">v3.0 // HUD_ONLINE</p>
                 </div>
@@ -467,14 +496,14 @@
               <div className="flex flex-col md:flex-row items-center justify-between gap-8 relative z-10">
                 
                 <div className="flex items-center gap-6 w-full md:w-auto">
-                  <div className={`p-6 border-l-4 ${isGodMode ? 'bg-red-950/30 border-red-500 shadow-[0_0_30px_rgba(239,68,68,0.3)]' : 'bg-black/50 border-slate-600'}`}>
-                    {isGodMode ? <Flame size={60} className="text-red-500" /> : <Zap size={60} className={currentStatus.color} />}
+                  <div className={`p-6 border-l-4 ${isGodMode ? 'bg-fuchsia-950/30 border-fuchsia-500 shadow-[0_0_40px_rgba(217,70,239,0.4)]' : 'bg-black/50 border-slate-600'}`}>
+                    {isGodMode ? <Flame size={60} className="text-fuchsia-500" /> : <Zap size={60} className={currentStatus.color} />}
                   </div>
                   <div>
                     <p className="text-xs font-mono text-slate-500 mb-1 tracking-widest uppercase flex items-center gap-2">
                       <Target size={14}/> Current Protocol
                     </p>
-                    <h2 className={`text-4xl md:text-5xl font-sci-fi font-black tracking-wider ${currentStatus.color}`} style={{ textShadow: isGodMode ? '0 0 20px #ef4444' : 'none' }}>
+                    <h2 className={`text-4xl md:text-5xl font-sci-fi font-black tracking-wider ${currentStatus.color}`} style={{ textShadow: isGodMode ? '0 0 20px rgba(217,70,239,0.5)' : 'none' }}>
                       {currentStatus.label}
                     </h2>
                     <p className="text-slate-400 mt-2 text-lg font-sci-fi font-bold tracking-widest uppercase">
@@ -487,13 +516,13 @@
                 <div className="w-full md:w-[400px] flex flex-col gap-2">
                   <div className="flex justify-between text-xs font-sci-fi font-bold tracking-widest text-slate-400 uppercase">
                     <span>Energy Power</span>
-                    <span className={isGodMode ? 'text-red-500' : 'text-cyan-400'}>Target: 5</span>
+                    <span className={isGodMode ? 'text-fuchsia-400' : 'text-cyan-400'}>Target: 5</span>
                   </div>
                   {/* 进度条外壳：倾斜角 */}
                   <div className="w-full h-8 bg-black/80 border border-slate-700 p-1" style={{ transform: 'skewX(-15deg)' }}>
-                    {/* 进度条内芯：带动态斜纹和渐变 */}
+                    {/* 进度条内芯：动态斜纹和渐变 */}
                     <div 
-                      className={`h-full transition-all duration-1000 ease-out energy-bar-stripes ${isGodMode ? 'bg-gradient-to-r from-red-800 to-red-500 shadow-[0_0_20px_#ef4444]' : 'bg-gradient-to-r from-cyan-800 to-cyan-400 shadow-[0_0_15px_#06b6d4]'}`}
+                      className={`h-full transition-all duration-1000 ease-out energy-bar-stripes ${isGodMode ? 'bg-ascended-flow shadow-[0_0_25px_#d946ef]' : 'bg-gradient-to-r from-cyan-800 to-cyan-400 shadow-[0_0_15px_#06b6d4]'}`}
                       style={{ width: `${Math.min((todayCount / 5) * 100, 100)}%` }}
                     ></div>
                   </div>
@@ -604,7 +633,7 @@
                         <input type="file" accept=".md,.txt" onChange={handleMdFileUpload} className="hidden" />
                       </label>
                     </label>
-                    <textarea value={markdownContent} onChange={(e) => setMarkdownContent(e.target.value)} placeholder="输入 Markdown 数据 / $$LaTeX$$ / 代码块..." rows="5" className="w-full bg-transparent border-t border-slate-800 text-slate-300 pt-3 focus:outline-none font-mono text-sm leading-relaxed" />
+                    <textarea value={markdownContent} onChange={(e) => setMarkdownContent(e.target.value)} placeholder={`输入 Markdown 数据...\n支持 $$LaTeX$$ 与 \`\`\`cpp 代码块`} rows="5" className="w-full bg-transparent border-t border-slate-800 text-slate-300 pt-3 focus:outline-none font-mono text-sm leading-relaxed" />
                   </div>
 
                   <div>
