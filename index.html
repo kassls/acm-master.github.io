@@ -3,17 +3,19 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>ACMer 核心控制台 - 纯粹极客版</title>
+  <title>青云白霓v4.0</title>
   
   <!-- 稳定 CDN 节点，防国内屏蔽 -->
   <script src="https://cdn.tailwindcss.com"></script>
   <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
   
+  <!-- Markdown 与高亮引擎 -->
   <script src="https://cdnjs.cloudflare.com/ajax/libs/marked/4.3.0/marked.min.js"></script>
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.8.0/styles/dracula.min.css">
   <script src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.8.0/highlight.min.js"></script>
   <script src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.8.0/languages/cpp.min.js"></script>
 
+  <!-- 数学公式引擎 -->
   <script>
     window.MathJax = {
       tex: { inlineMath: [['$', '$'], ['\\(', '\\)']], displayMath: [['$$', '$$'], ['\\[', '\\]']] },
@@ -51,21 +53,23 @@
 
     /* === 极致通透毛玻璃 HUD 面板 === */
     .hud-panel {
-      background: rgba(10, 15, 25, 0.35); /* 高度透明，透出背后星际 */
-      backdrop-filter: blur(16px) saturate(150%);
-      -webkit-backdrop-filter: blur(16px) saturate(150%);
-      border: 1px solid rgba(6, 182, 212, 0.25);
+      /* 极低的 Alpha 值保证背后的星轨/漩涡完全透出 */
+      background: rgba(8, 12, 20, 0.2); 
+      backdrop-filter: blur(16px) saturate(120%);
+      -webkit-backdrop-filter: blur(16px) saturate(120%);
+      border: 1px solid rgba(6, 182, 212, 0.2);
       position: relative;
     }
     .hud-clip { clip-path: polygon(0 0, calc(100% - 20px) 0, 100% 20px, 100% 100%, 20px 100%, 0 calc(100% - 20px)); }
     .hud-clip-ascended {
       border-color: rgba(217, 70, 239, 0.5);
-      box-shadow: 0 0 30px rgba(217, 70, 239, 0.2) inset;
+      box-shadow: 0 0 30px rgba(217, 70, 239, 0.15) inset;
     }
 
+    /* 内部元素只加浅色蒙版，杜绝嵌套 blur 导致的黑块 */
     .hud-inner-glass {
-      background: rgba(0, 0, 0, 0.3);
-      backdrop-filter: blur(8px);
+      background: rgba(255, 255, 255, 0.03);
+      border: 1px solid rgba(255, 255, 255, 0.05);
     }
 
     /* === 能量槽动态流光 === */
@@ -90,19 +94,19 @@
     }
 
     .scanlines {
-      background: linear-gradient(to bottom, rgba(255,255,255,0), rgba(255,255,255,0) 50%, rgba(0,0,0,0.15) 50%, rgba(0,0,0,0.15));
-      background-size: 100% 4px; position: absolute; inset: 0; pointer-events: none; opacity: 0.3;
+      background: linear-gradient(to bottom, rgba(255,255,255,0), rgba(255,255,255,0) 50%, rgba(0,0,0,0.1) 50%, rgba(0,0,0,0.1));
+      background-size: 100% 4px; position: absolute; inset: 0; pointer-events: none; opacity: 0.5;
     }
 
     .reader-glass {
-      background: rgba(10, 15, 25, 0.4);
-      backdrop-filter: blur(25px) saturate(180%);
-      -webkit-backdrop-filter: blur(25px) saturate(180%);
+      background: rgba(10, 15, 25, 0.3);
+      backdrop-filter: blur(25px) saturate(150%);
+      -webkit-backdrop-filter: blur(25px) saturate(150%);
       border: 1px solid rgba(255, 255, 255, 0.1);
       box-shadow: 0 8px 32px 0 rgba(0, 0, 0, 0.5);
     }
 
-    /* === 彻底修复的 MD 代码渲染 === */
+    /* === Markdown 极客渲染体系 (已彻底修复 C++ 高亮拦截问题) === */
     .md-prose { color: #e2e8f0; font-size: 1.05rem; line-height: 1.8; word-break: break-word; }
     .md-prose h1, .md-prose h2, .md-prose h3 { color: #ffffff; font-family: 'Rajdhani', sans-serif; font-weight: 700; margin-top: 1.5em; margin-bottom: 0.5em; letter-spacing: 0.5px; }
     .md-prose h1 { font-size: 2.25rem; border-bottom: 2px solid rgba(6, 182, 212, 0.4); padding-bottom: 0.3em; }
@@ -117,20 +121,29 @@
       padding: 0.2em 0.4em; border-radius: 4px; font-size: 0.9em; 
     }
     
+    /* 为 Markdown 中的代码块独立构建通透毛玻璃 */
     .md-prose pre { 
-      background: #282a36 !important; 
-      padding: 1.2em !important; border-radius: 8px; overflow-x: auto; 
-      margin: 1.5em 0; border: 1px solid rgba(255,255,255,0.1); box-shadow: 0 4px 6px rgba(0,0,0,0.5); 
+      background: rgba(20, 25, 35, 0.5) !important; /* 强制覆盖 Dracula 的背景底色 */
+      backdrop-filter: blur(12px);
+      -webkit-backdrop-filter: blur(12px);
+      border: 1px solid rgba(6, 182, 212, 0.25);
+      box-shadow: inset 0 0 20px rgba(0,0,0,0.5);
+      padding: 1.2em !important; 
+      border-radius: 8px; 
+      overflow-x: auto; 
+      margin: 1.5em 0; 
     }
     
-    .md-prose pre code { 
-      background: transparent !important; padding: 0 !important; 
-      font-family: 'Fira Code', monospace; font-size: 0.9em; 
-      /* 移除强制覆盖颜色，将高亮任务全权交接给 HLJS */
+    /* 清除 HLJS 内部强制注入的背景，让外层的 pre 毛玻璃接管背景 */
+    .md-prose pre code.hljs { 
+      background: transparent !important; 
+      padding: 0 !important; 
+      font-family: 'Fira Code', monospace; 
+      font-size: 0.9em; 
     }
     
     .md-prose blockquote { 
-      border-left: 4px solid #06b6d4; background: linear-gradient(90deg, rgba(6,182,212,0.1) 0%, transparent 100%);
+      border-left: 4px solid #06b6d4; background: linear-gradient(90deg, rgba(6,182,212,0.15) 0%, transparent 100%);
       padding: 1em 1.5em; margin: 1.5em 0; color: #94a3b8; font-style: italic; border-radius: 0 8px 8px 0;
     }
   </style>
@@ -146,13 +159,22 @@
       Plus, FileText, Upload, ArrowLeft, TerminalSquare, Trash2, Target, Zap
     } from 'https://esm.sh/lucide-react@0.263.1';
 
-    // 核心修复：防屏蔽的全局验证
-    if (typeof marked !== 'undefined') {
-      marked.setOptions({ breaks: true, gfm: true });
+    // 初始化 Marked 引擎，直接在解析时挂载 Highlight.js，彻底解决 React 环境下的 DOM 节点渲染竞争问题
+    if (typeof marked !== 'undefined' && window.hljs) {
+      marked.setOptions({
+        breaks: true,
+        gfm: true,
+        highlight: function (code, lang) {
+          if (lang && hljs.getLanguage(lang)) {
+            return hljs.highlight(code, { language: lang }).value;
+          }
+          return hljs.highlightAuto(code).value;
+        }
+      });
     }
 
     // ==========================================
-    // 纯粹 3D 星际跃迁引擎：彻底杜绝“乱”
+    // 3D 粒子双态引擎：大漩涡 (Vortex) / 隧道 (Tunnel)
     // ==========================================
     const ParticleEngine = ({ isGodMode, burstTrigger }) => {
       const canvasRef = useRef(null);
@@ -163,17 +185,18 @@
         let w = canvas.width = window.innerWidth;
         let h = canvas.height = window.innerHeight;
 
-        const stars = [];
-        const numStars = 2000;
+        // 提升粒子基数，大漩涡需要极其庞大的粒子规模
+        const numStars = 4000;
+        const stars = Array.from({ length: numStars }, () => ({
+          angle: Math.random() * Math.PI * 2,
+          radius: Math.random() * w * 1.5,
+          z: Math.random() * w,
+          randomOffset: Math.random(),
+          prevAngle: 0, prevRadius: 0, prevZ: 0
+        }));
 
-        for (let i = 0; i < numStars; i++) {
-          stars.push({
-            x: (Math.random() - 0.5) * w * 2,
-            y: (Math.random() - 0.5) * h * 2,
-            z: Math.random() * w,
-            colorOffset: Math.random() * 360,
-          });
-        }
+        // 初始化前驱坐标，防止第一帧拉丝
+        stars.forEach(s => { s.prevAngle = s.angle; s.prevRadius = s.radius; s.prevZ = s.z; });
 
         let animationId;
         let time = 0;
@@ -183,7 +206,7 @@
           time++;
           if (burstMultiplier > 1) burstMultiplier *= 0.95;
 
-          // 纯净的底层残影清理
+          // 使用深色半透明进行残影覆盖
           ctx.fillStyle = `rgba(3, 5, 8, ${0.4 / burstMultiplier})`;
           ctx.fillRect(0, 0, w, h);
 
@@ -192,49 +215,60 @@
           ctx.globalCompositeOperation = 'lighter';
 
           stars.forEach(star => {
-            const pz = star.z;
-            
+            // 记录旧帧数据
+            star.prevAngle = star.angle;
+            star.prevRadius = star.radius;
+            star.prevZ = star.z;
+
             if (isGodMode) {
-              // >= 5题：迎面极速冲击的光速跃迁通道 (完全笔直的射线、干净震撼)
-              star.z -= 15 * burstMultiplier;
+              // 【状态：隧道 / Tunnel】 -> 强制往圆柱体壁靠拢，极高 Z 轴速度
+              const targetRadius = w * 0.25 + star.randomOffset * w * 0.2; // 隧道管径
+              star.radius += (targetRadius - star.radius) * 0.1;
+              star.z -= (25 + star.randomOffset * 15) * burstMultiplier;
+              star.angle += 0.003; // 轻微自旋
             } else {
-              // < 5题：巨大宏伟的缓慢旋转星空
-              star.z -= 0.5;
-              const cos = Math.cos(0.001);
-              const sin = Math.sin(0.001);
-              const nx = star.x * cos - star.y * sin;
-              const ny = star.x * sin + star.y * cos;
-              star.x = nx;
-              star.y = ny;
+              // 【状态：大漩涡 / Vortex】 -> 半径不断向中心塌陷，角速度随向心力增大
+              star.radius -= (1.5 + star.randomOffset);
+              // 越靠近核心转得越快
+              const spinSpeed = 0.005 + (w / Math.max(10, star.radius)) * 0.001; 
+              star.angle -= spinSpeed;
+              star.z -= 1.0; 
             }
 
             // 越界重置
-            if (star.z < 1) {
+            if (star.z < 1 || star.radius < 1) {
               star.z = w;
-              star.x = (Math.random() - 0.5) * w * 2;
-              star.y = (Math.random() - 0.5) * h * 2;
-              return;
+              // 隧道模式下直接生在管壁上，漩涡模式下生在极远的外围
+              star.radius = isGodMode ? (w * 0.25 + Math.random() * w * 0.2) : (w * 1.2 * Math.random());
+              star.angle = Math.random() * Math.PI * 2;
+              star.prevAngle = star.angle;
+              star.prevRadius = star.radius;
+              star.prevZ = star.z;
+              return; // 跳过当前帧绘制
             }
 
-            // 3D 透视投影
-            const x = cx + (star.x / star.z) * w;
-            const y = cy + (star.y / star.z) * w;
-            const px = cx + (star.x / pz) * w;
-            const py = cy + (star.y / pz) * w;
+            // 极坐标系转 3D 透视坐标
+            const px = cx + (Math.cos(star.prevAngle) * star.prevRadius / star.prevZ) * w;
+            const py = cy + (Math.sin(star.prevAngle) * star.prevRadius / star.prevZ) * w;
+            const nx = cx + (Math.cos(star.angle) * star.radius / star.z) * w;
+            const ny = cy + (Math.sin(star.angle) * star.radius / star.z) * w;
 
             ctx.beginPath();
             ctx.moveTo(px, py);
-            ctx.lineTo(x, y);
+            ctx.lineTo(nx, ny);
 
+            const depthAlpha = Math.max(0, 1 - star.z / w);
+            
             if (isGodMode) {
-              // 跃迁状态：七彩光速射线
-              ctx.lineWidth = (1 - star.z / w) * 6 + 0.5;
-              const hue = (time * 2 + star.colorOffset) % 360;
-              ctx.strokeStyle = `hsla(${hue}, 100%, 65%, ${1 - star.z / w})`;
+              // 隧道模式：高能七彩光效
+              const hue = (time * 4 + star.randomOffset * 360) % 360;
+              ctx.strokeStyle = `hsla(${hue}, 100%, 70%, ${depthAlpha})`;
+              ctx.lineWidth = depthAlpha * 5 + 1;
             } else {
-              // 日常状态：赛博青星点与微拖尾
-              ctx.lineWidth = (1 - star.z / w) * 3 + 0.5;
-              ctx.strokeStyle = `rgba(6, 182, 212, ${1 - star.z / w})`;
+              // 漩涡模式：深邃的青蓝紫赛博空间感
+              const hue = 180 + star.randomOffset * 80; 
+              ctx.strokeStyle = `hsla(${hue}, 100%, 65%, ${depthAlpha * 0.8})`;
+              ctx.lineWidth = depthAlpha * 2.5 + 0.5;
             }
             ctx.stroke();
           });
@@ -252,6 +286,7 @@
         return () => { cancelAnimationFrame(animationId); window.removeEventListener('resize', handleResize); };
       }, [isGodMode, burstTrigger]);
 
+      // 使用 mix-blend-screen 将 canvas 黑色背景完全透明化，只留下高亮粒子
       return <canvas ref={canvasRef} className="fixed inset-0 z-0 pointer-events-none mix-blend-screen" />;
     };
 
@@ -263,17 +298,9 @@
       const [showBgSettings, setShowBgSettings] = useState(false);
 
       useEffect(() => {
-        if (contentRef.current) {
-          // 在渲染完成后，安全地找到所有代码块并让 Highlight.js 着色
-          if (window.hljs) {
-            contentRef.current.querySelectorAll('pre code').forEach((block) => {
-              delete block.dataset.highlighted; 
-              window.hljs.highlightElement(block);
-            });
-          }
-          if (window.MathJax && window.MathJax.typesetPromise) { 
-            window.MathJax.typesetPromise([contentRef.current]).catch((err) => console.log(err)); 
-          }
+        // 执行公式渲染。注意：代码的高亮已经在 marked 的配置中同步完成了，无需再手动调用 querySelectorAll 和 hljs
+        if (contentRef.current && window.MathJax && window.MathJax.typesetPromise) { 
+          window.MathJax.typesetPromise([contentRef.current]).catch((err) => console.log(err)); 
         }
       }, [problem]);
 
@@ -295,7 +322,6 @@
         reader.readAsDataURL(file);
       };
 
-      // 安全的 Markdown 渲染解析
       const getMarkdownHtml = () => {
         if (typeof marked !== 'undefined') {
           return marked.parse(problem.markdown || '> *该节点暂无详细记忆数据。*');
@@ -468,6 +494,7 @@
             </div>
           )}
 
+          {/* 渲染层级被设置在 z-0，与背景色混合。HUD 面板则是透过毛玻璃展现它。 */}
           <ParticleEngine isGodMode={isGodMode} burstTrigger={flashEffect} />
 
           <div className="max-w-7xl mx-auto space-y-8 relative z-10 p-4 md:p-8">
@@ -482,7 +509,7 @@
                   <h1 className="text-2xl md:text-3xl font-sci-fi font-black text-white tracking-widest uppercase">
                     ACMer <span className={isGodMode ? 'text-fuchsia-400 drop-shadow-[0_0_10px_#d946ef]' : 'text-cyan-400'}>NEXUS</span>
                   </h1>
-                  <p className="text-slate-500 text-xs font-mono tracking-widest mt-1">v3.0 // HUD_ONLINE</p>
+                  <p className="text-slate-500 text-xs font-mono tracking-widest mt-1">v4.0 // HUD_ONLINE</p>
                 </div>
               </div>
               <div className="text-right hidden md:block relative z-10">
@@ -530,6 +557,7 @@
 
             <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
               
+              {/* 高级通透毛玻璃视图 */}
               <div className="lg:col-span-2 hud-panel flex flex-col border-t-4 border-t-cyan-500" style={{ maxHeight: '800px' }}>
                 <div className="scanlines"></div>
                 <div className="p-6 border-b border-cyan-500/20 hud-inner-glass flex flex-col sm:flex-row sm:items-center justify-between gap-4 relative z-10">
@@ -540,17 +568,17 @@
                   <div className="relative w-full sm:w-80">
                     <Search className="absolute left-4 top-1/2 -translate-y-1/2 text-cyan-500 w-4 h-4" />
                     <input type="text" placeholder="检索 ID / 标签..." value={searchQuery} onChange={(e) => setSearchQuery(e.target.value)}
-                      className="w-full pl-12 pr-4 py-2.5 bg-black/60 border border-slate-700 text-slate-100 font-mono text-sm focus:border-cyan-500 outline-none" style={{ transform: 'skewX(-5deg)' }}
+                      className="w-full pl-12 pr-4 py-2.5 bg-black/40 border border-slate-700 text-slate-100 font-mono text-sm focus:border-cyan-500 outline-none backdrop-blur-sm transition-all" style={{ transform: 'skewX(-5deg)' }}
                     />
                   </div>
                 </div>
                 
-                <div className="divide-y divide-slate-800/80 overflow-y-auto flex-1 p-4 space-y-3 relative z-10">
+                <div className="divide-y divide-slate-800/50 overflow-y-auto flex-1 p-4 space-y-3 relative z-10">
                   {filteredProblems.map(problem => (
-                    <div key={problem.id} className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 p-4 hud-inner-glass hover:bg-cyan-950/20 border border-slate-800 hover:border-cyan-500/50 transition-all group">
+                    <div key={problem.id} className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 p-4 hud-inner-glass hover:bg-cyan-500/10 border border-slate-700/30 hover:border-cyan-400/50 transition-all group">
                       
                       <div className="flex items-center gap-5">
-                        <div className="text-cyan-400 border border-cyan-800 bg-black font-sci-fi font-bold px-3 py-1 text-sm tracking-widest uppercase" style={{ transform: 'skewX(-10deg)' }}>
+                        <div className="text-cyan-400 border border-cyan-800 bg-black/50 font-sci-fi font-bold px-3 py-1 text-sm tracking-widest uppercase" style={{ transform: 'skewX(-10deg)' }}>
                           <span style={{ display: 'inline-block', transform: 'skewX(10deg)' }}>{problem.platform}</span>
                         </div>
                         <div className="flex flex-col gap-1">
@@ -559,7 +587,7 @@
                           </span>
                           <div className="flex gap-2">
                             {problem.tags && problem.tags.slice(0,3).map((tag, idx) => (
-                              <span key={idx} className="text-xs text-slate-500 font-mono">#{tag}</span>
+                              <span key={idx} className="text-xs text-cyan-500/80 font-mono">#{tag}</span>
                             ))}
                           </div>
                         </div>
@@ -567,15 +595,15 @@
 
                       <div className="flex items-center gap-3 shrink-0 mt-2 sm:mt-0">
                         <span className={`text-xs px-4 py-1.5 font-black uppercase tracking-widest border ${
-                          problem.difficulty === '困难' ? 'bg-red-950/50 text-red-400 border-red-900/80' :
-                          problem.difficulty === '中等' ? 'bg-orange-950/50 text-orange-400 border-orange-900/80' :
-                          'bg-green-950/50 text-green-400 border-green-900/80'
+                          problem.difficulty === '困难' ? 'bg-red-950/30 text-red-400 border-red-900/50' :
+                          problem.difficulty === '中等' ? 'bg-orange-950/30 text-orange-400 border-orange-900/50' :
+                          'bg-green-950/30 text-green-400 border-green-900/50'
                         }`} style={{ transform: 'skewX(-10deg)' }}>
                            <span style={{ display: 'inline-block', transform: 'skewX(10deg)' }}>{problem.difficulty}</span>
                         </span>
                         
                         <button onClick={() => openReader(problem)}
-                          className="flex items-center gap-2 px-4 py-2 bg-cyan-950/50 hover:bg-cyan-600 text-cyan-400 hover:text-white font-sci-fi font-bold border border-cyan-800 hover:border-cyan-400 transition-all uppercase tracking-widest text-sm"
+                          className="flex items-center gap-2 px-4 py-2 bg-cyan-950/30 hover:bg-cyan-600/80 text-cyan-400 hover:text-white font-sci-fi font-bold border border-cyan-800/50 hover:border-cyan-400 transition-all uppercase tracking-widest text-sm"
                           style={{ transform: 'skewX(-10deg)' }}
                         >
                           <span className="flex items-center gap-1" style={{ display: 'inline-block', transform: 'skewX(10deg)' }}>
@@ -583,7 +611,7 @@
                           </span>
                         </button>
 
-                        <button onClick={() => handleDeleteProblem(problem.id)} className="p-2 bg-red-950/30 hover:bg-red-600 text-red-500 hover:text-white transition-all border border-red-900/50" title="PURGE DATA">
+                        <button onClick={() => handleDeleteProblem(problem.id)} className="p-2 bg-red-950/20 hover:bg-red-600/80 text-red-500 hover:text-white transition-all border border-red-900/30" title="PURGE DATA">
                           <Trash2 size={16} />
                         </button>
                       </div>
@@ -609,20 +637,20 @@
                 <form onSubmit={handleAddProblem} className="space-y-6 relative z-10">
                   <div>
                     <label className="block text-xs font-bold text-slate-500 mb-2 font-mono uppercase">Platform</label>
-                    <select value={newPlatform} onChange={(e) => setNewPlatform(e.target.value)} className="w-full hud-inner-glass border border-slate-700 text-slate-100 px-4 py-3 focus:border-blue-500 outline-none font-sci-fi font-bold text-base tracking-widest uppercase" style={{ transform: 'skewX(-5deg)' }}>
+                    <select value={newPlatform} onChange={(e) => setNewPlatform(e.target.value)} className="w-full bg-black/40 border border-slate-700 text-slate-100 px-4 py-3 focus:border-blue-500 outline-none font-sci-fi font-bold text-base tracking-widest uppercase backdrop-blur-sm" style={{ transform: 'skewX(-5deg)' }}>
                       <option>Codeforces</option> <option>AtCoder</option> <option>LeetCode</option> <option>Luogu</option>
                     </select>
                   </div>
 
                   <div>
                     <label className="block text-xs font-bold text-slate-500 mb-2 font-mono uppercase">Problem Title</label>
-                    <input type="text" value={newTitle} onChange={(e) => setNewTitle(e.target.value)} placeholder="e.g. A. Watermelon" className="w-full hud-inner-glass border border-slate-700 text-slate-100 px-4 py-3 focus:border-blue-500 outline-none font-bold text-base" style={{ transform: 'skewX(-5deg)' }} />
+                    <input type="text" value={newTitle} onChange={(e) => setNewTitle(e.target.value)} placeholder="e.g. A. Watermelon" className="w-full bg-black/40 border border-slate-700 text-slate-100 px-4 py-3 focus:border-blue-500 outline-none font-bold text-base backdrop-blur-sm" style={{ transform: 'skewX(-5deg)' }} />
                   </div>
 
-                  <div className="p-4 hud-inner-glass border border-slate-700/80 relative">
+                  <div className="p-4 hud-inner-glass border border-slate-700/50 relative">
                     <label className="flex items-center justify-between text-xs font-bold text-cyan-500 mb-3 font-mono uppercase">
                       <span className="flex items-center gap-2"><FileText size={14}/> MD_Payload</span>
-                      <label className="cursor-pointer bg-cyan-950/50 text-cyan-400 px-2 py-1 border border-cyan-800 hover:bg-cyan-900 transition-colors flex items-center gap-1" style={{ transform: 'skewX(-10deg)' }}>
+                      <label className="cursor-pointer bg-cyan-950/30 text-cyan-400 px-2 py-1 border border-cyan-800 hover:bg-cyan-900/80 transition-colors flex items-center gap-1" style={{ transform: 'skewX(-10deg)' }}>
                         <span style={{ display: 'inline-block', transform: 'skewX(10deg)' }}><Upload size={12} className="inline mr-1"/>Import_MD</span>
                         <input type="file" accept=".md,.txt" onChange={handleMdFileUpload} className="hidden" />
                       </label>
@@ -632,7 +660,7 @@
 
                   <div>
                     <label className="block text-xs font-bold text-slate-500 mb-2 font-mono uppercase">Tags</label>
-                    <input type="text" value={newTags} onChange={(e) => setNewTags(e.target.value)} placeholder="DP, 图论, 数学..." className="w-full hud-inner-glass border border-slate-700 text-slate-100 rounded-lg px-4 py-3 focus:border-blue-500 transition-all font-bold" />
+                    <input type="text" value={newTags} onChange={(e) => setNewTags(e.target.value)} placeholder="DP, 图论, 数学..." className="w-full bg-black/40 border border-slate-700 text-slate-100 rounded-lg px-4 py-3 focus:border-blue-500 transition-all font-bold backdrop-blur-sm" />
                   </div>
 
                   <div>
@@ -642,10 +670,10 @@
                         <button key={diff} type="button" onClick={() => setNewDifficulty(diff)}
                           className={`py-2 text-sm border font-sci-fi font-bold tracking-widest uppercase transition-all ${
                             newDifficulty === diff 
-                              ? (diff === '简单' ? 'bg-green-950/50 border-green-500 text-green-400' :
-                                 diff === '中等' ? 'bg-orange-950/50 border-orange-500 text-orange-400' :
-                                 'bg-red-950/50 border-red-500 text-red-500')
-                              : 'hud-inner-glass border-slate-800 text-slate-500 hover:border-slate-500'
+                              ? (diff === '简单' ? 'bg-green-900/50 border-green-500 text-green-400' :
+                                 diff === '中等' ? 'bg-orange-900/50 border-orange-500 text-orange-400' :
+                                 'bg-red-900/50 border-red-500 text-red-400')
+                              : 'hud-inner-glass border-slate-700/50 text-slate-400 hover:border-slate-500'
                           }`}
                           style={{ transform: 'skewX(-10deg)' }}
                         >
@@ -656,7 +684,7 @@
                   </div>
 
                   <button type="submit" disabled={!newTitle.trim()}
-                    className="w-full mt-8 bg-blue-600 hover:bg-blue-500 text-white font-sci-fi font-black py-4 transition-all active:scale-95 disabled:opacity-50 flex items-center justify-center gap-3 uppercase tracking-widest text-lg"
+                    className="w-full mt-8 bg-blue-600/80 hover:bg-blue-500 text-white font-sci-fi font-black py-4 transition-all active:scale-95 disabled:opacity-50 flex items-center justify-center gap-3 uppercase tracking-widest text-lg border border-blue-400/50"
                     style={{ transform: 'skewX(-10deg)' }}
                   >
                     <span className="flex items-center gap-2" style={{ display: 'inline-block', transform: 'skewX(10deg)' }}>
