@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>ACMer 核心控制台 - 量子飞升版</title>
+  <title>ACMer 核心控制台 - 飞龙在天版</title>
   
   <script src="https://cdn.tailwindcss.com"></script>
   <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
@@ -11,6 +11,11 @@
   
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.8.0/styles/dracula.min.css">
   <script src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.8.0/highlight.min.js"></script>
+
+  <!-- 引入 three.js 用于飞龙特效 -->
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r134/three.min.js"></script>
+  <!-- 引入 GLTFLoader 用于加载龙的模型 -->
+  <script src="https://cdn.jsdelivr.net/npm/three@0.134.0/examples/js/loaders/GLTFLoader.js"></script>
 
   <script>
     MathJax = {
@@ -159,112 +164,276 @@
     });
 
     // ==========================================
-    // 性能重制版引擎：双形态背景 (无卡顿 + 彻底变身)
+    // 全新双形态引擎：星云漩涡 (低功耗) + 飞龙在天 (高功耗 3D)
     // ==========================================
-    const PerformanceEngine = ({ isGodMode, burstTrigger }) => {
+    const DualEngineBackground = ({ isGodMode, burstTrigger }) => {
       const canvasRef = useRef(null);
+      const threeContainerRef = useRef(null);
+      const rendererRef = useRef(null);
+      const sceneRef = useRef(null);
+      const cameraRef = useRef(null);
+      const dragonRef = useRef(null);
+      const mixerRef = useRef(null);
+      const clockRef = useRef(new THREE.Clock());
+      const cloudsRef = useRef([]);
 
+      // ====================
+      // 形态一：星云漩涡 (Canvas 2D) - < 5 题
+      // ====================
       useEffect(() => {
+        if (isGodMode) return; // 如果是超神模式，不启动这个 2D 引擎
+
         const canvas = canvasRef.current;
-        // alpha: false 可以显著提高背景填充效率
         const ctx = canvas.getContext('2d', { alpha: false });
-        let w = canvas.width = window.innerWidth;
-        let h = canvas.height = window.innerHeight;
+        let width = canvas.width = window.innerWidth;
+        let height = canvas.height = window.innerHeight;
 
-        // 数据结构隔离
-        const nodes = [];
-        for(let i=0; i<80; i++) nodes.push({ x: Math.random()*w, y: Math.random()*h, vx: (Math.random()-0.5)*1, vy: (Math.random()-0.5)*1 });
+        const particles = [];
+        const particleCount = 800; // 显著增加粒子数量
 
-        const stars = [];
-        for(let i=0; i<300; i++) stars.push({ x: (Math.random()-0.5)*w*2, y: (Math.random()-0.5)*h*2, z: Math.random()*w });
+        class Particle {
+          constructor() {
+            this.reset();
+            this.angle = Math.random() * Math.PI * 2;
+            this.radius = Math.random() * (width > height ? width : height);
+          }
+          reset() {
+            this.angle = Math.random() * Math.PI * 2;
+            this.radius = Math.random() * 60; // 稍微增大核心区域
+            this.speed = (Math.random() * 1.5 + 0.5);
+            this.size = Math.random() * 2 + 0.5;
+            this.colorOffset = Math.random() * 360;
+          }
+          update() {
+            // 平稳涡流，速度稍慢，显得更宏大
+            this.angle += 0.003;
+            this.radius += this.speed * 0.4;
+            
+            this.x = width / 2 + Math.cos(this.angle) * this.radius;
+            this.y = height / 2 + Math.sin(this.angle) * this.radius;
+
+            if (this.radius > (width > height ? width : height)) this.reset();
+          }
+          draw(ctx, time) {
+            ctx.beginPath();
+            ctx.arc(this.x, this.y, this.size, 0, Math.PI * 2);
+            
+            const alpha = Math.max(0, 1 - (this.radius / (width * 0.7))); // 增大透明度衰减半径
+            
+            // 赛博青 + 一点点紫色偏色
+            const hue = (190 + this.colorOffset * 0.1 + time * 0.1) % 360;
+            ctx.fillStyle = `hsla(${hue}, 100%, 60%, ${alpha})`;
+            // 移除 shadowBlur 以提升性能，粒子够多就有效果了
+            ctx.fill();
+          }
+        }
+
+        for (let i = 0; i < particleCount; i++) particles.push(new Particle());
 
         let animationId;
-        let time = 0;
-        let burstMultiplier = 1;
+        let globalTime = 0;
 
-        const draw = () => {
-          time++;
-          
-          if (burstMultiplier > 1) burstMultiplier *= 0.95;
-          if (burstMultiplier < 1) burstMultiplier = 1;
+        const animate = () => {
+          globalTime += 1;
+          ctx.fillStyle = 'rgba(2, 5, 10, 0.3)'; // 拖尾效果
+          ctx.fillRect(0, 0, width, height);
 
-          if (isGodMode) {
-            // 【形态二：量子跃迁通道 - 高速、七彩流光、3D 视觉】
-            ctx.fillStyle = `rgba(5, 2, 10, ${0.2 / burstMultiplier})`;
-            ctx.fillRect(0, 0, w, h);
+          // 核心发光
+          const coreRadius = 120 + Math.sin(globalTime*0.05)*30; // 增大核心
+          const gradient = ctx.createRadialGradient(width/2, height/2, 0, width/2, height/2, coreRadius * 3);
+          gradient.addColorStop(0, 'rgba(6, 182, 212, 0.15)');
+          gradient.addColorStop(1, 'transparent');
+          ctx.fillStyle = gradient;
+          ctx.fillRect(0,0,width,height);
 
-            ctx.globalCompositeOperation = 'lighter';
-            const cx = w/2; const cy = h/2;
-            const speed = 15 * burstMultiplier; // 跃迁速度
+          ctx.globalCompositeOperation = 'lighter';
+          particles.forEach(p => {
+            p.update();
+            p.draw(ctx, globalTime);
+          });
+          ctx.globalCompositeOperation = 'source-over';
 
-            stars.forEach(star => {
-               const pz = star.z;
-               star.z -= speed;
-               if (star.z <= 1) { 
-                 star.z = w; star.x = (Math.random()-0.5)*w*2; star.y = (Math.random()-0.5)*h*2; 
-                 return; 
-               }
-
-               const x = cx + (star.x / star.z) * w;
-               const y = cy + (star.y / star.z) * w;
-               const px = cx + (star.x / pz) * w;
-               const py = cy + (star.y / pz) * w;
-
-               // 七彩渐变射线
-               const hue = (time*2 + star.x + star.y) % 360;
-               ctx.beginPath();
-               ctx.lineWidth = (1 - star.z/w) * 4;
-               ctx.strokeStyle = `hsla(${hue}, 100%, 65%, ${1 - star.z/w})`;
-               ctx.moveTo(px, py);
-               ctx.lineTo(x, y);
-               ctx.stroke();
-            });
-            ctx.globalCompositeOperation = 'source-over';
-            
-          } else {
-            // 【形态一：青蓝色神经网络 - 极简、安静、连线交织】
-            ctx.fillStyle = 'rgba(5, 10, 15, 0.4)';
-            ctx.fillRect(0, 0, w, h);
-
-            ctx.lineWidth = 1;
-            nodes.forEach((n, i) => {
-               n.x += n.vx; n.y += n.vy;
-               if(n.x<0 || n.x>w) n.vx*=-1;
-               if(n.y<0 || n.y>h) n.vy*=-1;
-
-               ctx.beginPath();
-               ctx.arc(n.x, n.y, 2, 0, Math.PI*2);
-               ctx.fillStyle = '#06b6d4';
-               ctx.fill();
-
-               // 节点连线
-               for(let j=i+1; j<nodes.length; j++) {
-                  const n2 = nodes[j];
-                  const dx = n.x - n2.x; const dy = n.y - n2.y;
-                  const distSq = dx*dx + dy*dy;
-                  if(distSq < 20000) { // 开方前的距离比较，极大提升性能
-                     ctx.beginPath();
-                     ctx.moveTo(n.x, n.y);
-                     ctx.lineTo(n2.x, n2.y);
-                     ctx.strokeStyle = `rgba(6, 182, 212, ${1 - distSq/20000})`;
-                     ctx.stroke();
-                  }
-               }
-            });
-          }
-          
-          animationId = requestAnimationFrame(draw);
+          animationId = requestAnimationFrame(animate);
         };
-        draw();
 
-        if (burstTrigger) burstMultiplier = 5;
+        animate();
 
-        const handleResize = () => { w = canvas.width = window.innerWidth; h = canvas.height = window.innerHeight; };
+        const handleResize = () => { width = canvas.width = window.innerWidth; height = canvas.height = window.innerHeight; };
         window.addEventListener('resize', handleResize);
         return () => { cancelAnimationFrame(animationId); window.removeEventListener('resize', handleResize); };
-      }, [isGodMode, burstTrigger]);
+      }, [isGodMode]); // 仅在非 God Mode 下运行
 
-      return <canvas ref={canvasRef} className="fixed inset-0 z-0 pointer-events-none" />;
+      // ====================
+      // 形态二：飞龙在天 (Three.js 3D) - >= 5 题
+      // ====================
+      useEffect(() => {
+        if (!isGodMode) return; // 如果不是超神模式，不启动这个 3D 引擎
+
+        const container = threeContainerRef.current;
+        let width = window.innerWidth;
+        let height = window.innerHeight;
+
+        // 1. 初始化场景、相机、渲染器
+        const scene = new THREE.Scene();
+        sceneRef.current = scene;
+        // 七彩祥云背景色
+        scene.background = new THREE.Color(0x1a1a2e); 
+        scene.fog = new THREE.FogExp2(0x1a1a2e, 0.001);
+
+        const camera = new THREE.PerspectiveCamera(75, width / height, 0.1, 2000);
+        camera.position.set(0, 50, 300);
+        camera.lookAt(0, 0, 0);
+        cameraRef.current = camera;
+
+        const renderer = new THREE.WebGLRenderer({ antialias: true, alpha: true });
+        renderer.setSize(width, height);
+        renderer.setPixelRatio(window.devicePixelRatio);
+        container.appendChild(renderer.domElement);
+        rendererRef.current = renderer;
+
+        // 2. 添加灯光
+        const ambientLight = new THREE.AmbientLight(0xffffff, 0.5);
+        scene.add(ambientLight);
+        const directionalLight = new THREE.DirectionalLight(0xffd700, 1); // 金光
+        directionalLight.position.set(100, 200, 100);
+        scene.add(directionalLight);
+        // 添加一些彩色的点光源来模拟祥云反光
+        const pLight1 = new THREE.PointLight(0x00ffff, 1, 500); pLight1.position.set(200, 100, 0); scene.add(pLight1);
+        const pLight2 = new THREE.PointLight(0xff00ff, 1, 500); pLight2.position.set(-200, 100, 0); scene.add(pLight2);
+
+        // 3. 创建七彩祥云 (用粒子系统模拟)
+        const cloudGeo = new THREE.BufferGeometry();
+        const cloudCount = 2000;
+        const posArray = new Float32Array(cloudCount * 3);
+        const colorArray = new Float32Array(cloudCount * 3);
+        for(let i=0; i<cloudCount*3; i+=3) {
+            posArray[i] = (Math.random()-0.5) * 1000;
+            posArray[i+1] = (Math.random()-0.5) * 200 + 50; // 扁平分布
+            posArray[i+2] = (Math.random()-0.5) * 1000;
+            
+            // 七彩颜色
+            const color = new THREE.Color();
+            color.setHSL(Math.random(), 0.8, 0.6);
+            colorArray[i] = color.r; colorArray[i+1] = color.g; colorArray[i+2] = color.b;
+        }
+        cloudGeo.setAttribute('position', new THREE.BufferAttribute(posArray, 3));
+        cloudGeo.setAttribute('color', new THREE.BufferAttribute(colorArray, 3));
+        // 使用一个简单的圆形贴图来模拟云朵/光晕
+        const sprite = new THREE.TextureLoader().load('https://threejs.org/examples/textures/sprites/disc.png');
+        const cloudMat = new THREE.PointsMaterial({ 
+            size: 30, vertexColors: true, map: sprite, transparent: true, opacity: 0.3, blending: THREE.AdditiveBlending, depthWrite: false
+        });
+        const cloudParticles = new THREE.Points(cloudGeo, cloudMat);
+        scene.add(cloudParticles);
+        cloudsRef.current = cloudParticles;
+
+
+        // 4. 加载飞龙模型 (使用一个开源的低模龙作为占位，实际需要更精细的模型)
+        // 注意：这里使用了一个在线的 GLTF 模型 URL。如果失效，需要替换。
+        const loader = new THREE.GLTFLoader();
+        // 一个简单的东方龙模型 URL (低面数)
+        const dragonModelUrl = 'https://raw.githubusercontent.com/KhronosGroup/glTF-Sample-Models/master/2.0/DragonAttenuation/glTF-Binary/DragonAttenuation.glb';
+        
+        loader.load(dragonModelUrl, (gltf) => {
+            const dragon = gltf.scene;
+            dragon.scale.set(30, 30, 30); // 调整大小
+            dragon.position.set(0, 0, 0);
+            // 给龙添加一个发光的材质
+            dragon.traverse((child) => {
+                if (child.isMesh) {
+                    child.material = new THREE.MeshStandardMaterial({
+                        color: 0xffd700, // 金色
+                        emissive: 0xffaa00, // 发光色
+                        emissiveIntensity: 0.5,
+                        roughness: 0.3,
+                        metalness: 0.8
+                    });
+                }
+            });
+            scene.add(dragon);
+            dragonRef.current = dragon;
+
+            // 如果模型有动画，可以在这里播放 (这个示例模型可能没有飞行动画)
+            // mixerRef.current = new THREE.AnimationMixer(dragon);
+            // const action = mixerRef.current.clipAction(gltf.animations[0]);
+            // action.play();
+        }, undefined, (error) => {
+            console.error('An error happened loading the dragon model:', error);
+        });
+
+
+        // 5. 动画循环
+        let animationId;
+        const animate = () => {
+            animationId = requestAnimationFrame(animate);
+            const delta = clockRef.current.getDelta();
+            const time = clockRef.current.getElapsedTime();
+
+            if (mixerRef.current) mixerRef.current.update(delta);
+
+            // 让龙沿 8 字形轨迹飞行
+            if (dragonRef.current) {
+                const t = time * 0.3;
+                dragonRef.current.position.x = Math.sin(t) * 150;
+                dragonRef.current.position.y = Math.cos(t * 2) * 50 + 50;
+                dragonRef.current.position.z = Math.cos(t) * 150;
+                // 让龙头朝向飞行方向 (简单近似)
+                dragonRef.current.lookAt(
+                    Math.sin(t + 0.1) * 150,
+                    Math.cos((t + 0.1) * 2) * 50 + 50,
+                    Math.cos(t + 0.1) * 150
+                );
+            }
+
+            // 让祥云缓慢流动旋转
+            if (cloudsRef.current) {
+                cloudsRef.current.rotation.y = time * 0.02;
+            }
+
+            renderer.render(scene, camera);
+        };
+        animate();
+
+        const handleResize = () => {
+            width = window.innerWidth; height = window.innerHeight;
+            camera.aspect = width / height;
+            camera.updateProjectionMatrix();
+            renderer.setSize(width, height);
+        };
+        window.addEventListener('resize', handleResize);
+
+        // 清理函数
+        return () => {
+            cancelAnimationFrame(animationId);
+            window.removeEventListener('resize', handleResize);
+            if (rendererRef.current && container) {
+                container.removeChild(rendererRef.current.domElement);
+            }
+            // 释放 Three.js 资源
+            scene.traverse((object) => {
+                if (object.geometry) object.geometry.dispose();
+                if (object.material) {
+                    if (Array.isArray(object.material)) object.material.forEach(m => m.dispose());
+                    else object.material.dispose();
+                }
+            });
+        };
+      }, [isGodMode]); // 仅在 God Mode 下运行
+
+      return (
+        <>
+          {/* 形态一的 Canvas，在非 God Mode 时显示 */}
+          <canvas 
+            ref={canvasRef} 
+            className={`fixed inset-0 z-0 pointer-events-none transition-opacity duration-1000 ${isGodMode ? 'opacity-0' : 'opacity-100'}`} 
+          />
+          {/* 形态二的 Three.js 容器，在 God Mode 时显示 */}
+          <div 
+            ref={threeContainerRef} 
+            className={`fixed inset-0 z-0 pointer-events-none transition-opacity duration-1000 ${isGodMode ? 'opacity-100' : 'opacity-0'}`}
+          />
+        </>
+      );
     };
 
     // ==========================================
@@ -432,8 +601,8 @@
         if (count <= 2) return { label: 'ENGINE IGNITION', color: 'text-cyan-400', glow: 'shadow-[0_0_30px_rgba(6,182,212,0.15)]' };
         if (count <= 4) return { label: 'UNSTOPPABLE', color: 'text-blue-400', glow: 'shadow-[0_0_40px_rgba(59,130,246,0.3)]' };
         return { 
-          label: 'QUANTUM ASCENDED', 
-          color: 'text-transparent bg-clip-text bg-gradient-to-r from-fuchsia-400 via-cyan-400 to-yellow-400 animate-pulse', 
+          label: 'DRAGON ASCENDED // 飞龙在天', 
+          color: 'text-transparent bg-clip-text bg-gradient-to-r from-yellow-300 via-red-500 to-fuchsia-500 animate-pulse font-black', 
           glow: 'hud-clip-ascended' 
         };
       };
@@ -458,8 +627,8 @@
             </div>
           )}
 
-          {/* 底层高性能 Canvas 引擎 */}
-          <PerformanceEngine isGodMode={isGodMode} burstTrigger={flashEffect} />
+          {/* 底层双形态引擎 */}
+          <DualEngineBackground isGodMode={isGodMode} burstTrigger={flashEffect} />
 
           <div className="max-w-7xl mx-auto space-y-8 relative z-10 p-4 md:p-8">
             
@@ -494,7 +663,7 @@
                     <p className="text-xs font-mono text-slate-500 mb-1 tracking-widest uppercase flex items-center gap-2">
                       <Target size={14}/> Current Protocol
                     </p>
-                    <h2 className={`text-4xl md:text-5xl font-sci-fi font-black tracking-wider ${currentStatus.color}`} style={{ textShadow: isGodMode ? '0 0 20px rgba(217,70,239,0.5)' : 'none' }}>
+                    <h2 className={`text-4xl md:text-6xl font-sci-fi font-black tracking-wider ${currentStatus.color}`} style={{ textShadow: isGodMode ? '0 0 30px rgba(217,70,239,0.6)' : 'none' }}>
                       {currentStatus.label}
                     </h2>
                     <p className="text-slate-400 mt-2 text-lg font-sci-fi font-bold tracking-widest uppercase">
