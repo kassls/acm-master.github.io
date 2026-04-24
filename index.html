@@ -5,15 +5,14 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>ACMer 核心控制台 - 纯粹极客版</title>
   
-  <script src="[https://cdn.tailwindcss.com](https://cdn.tailwindcss.com)"></script>
-  <script src="[https://unpkg.com/@babel/standalone/babel.min.js](https://unpkg.com/@babel/standalone/babel.min.js)"></script>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
   
-  <!-- 核心修复 1：锁定 Marked.js 到稳定支持高亮的 v4.3.0 版本 -->
-  <script src="[https://cdn.jsdelivr.net/npm/marked@4.3.0/marked.min.js](https://cdn.jsdelivr.net/npm/marked@4.3.0/marked.min.js)"></script>
-  <link rel="stylesheet" href="[https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.8.0/styles/dracula.min.css](https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.8.0/styles/dracula.min.css)">
-  <script src="[https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.8.0/highlight.min.js](https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.8.0/highlight.min.js)"></script>
-  <!-- 确保 C++ 语法包被加载 -->
-  <script src="[https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.8.0/languages/cpp.min.js](https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.8.0/languages/cpp.min.js)"></script>
+  <!-- 核心修复：锁定 Marked.js 到稳定支持高亮的版本，并使用正确的链接格式 -->
+  <script src="https://cdn.jsdelivr.net/npm/marked@4.3.0/marked.min.js"></script>
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.8.0/styles/dracula.min.css">
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.8.0/highlight.min.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.8.0/languages/cpp.min.js"></script>
 
   <!-- MathJax -->
   <script>
@@ -22,10 +21,10 @@
       startup: { typeset: false }
     };
   </script>
-  <script id="MathJax-script" async src="[https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-mml-chtml.js](https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-mml-chtml.js)"></script>
+  <script id="MathJax-script" async src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-mml-chtml.js"></script>
 
   <style>
-    @import url('[https://fonts.googleapis.com/css2?family=Rajdhani:wght@500;700;900&family=Fira+Code:wght@400;600&display=swap](https://fonts.googleapis.com/css2?family=Rajdhani:wght@500;700;900&family=Fira+Code:wght@400;600&display=swap)');
+    @import url('https://fonts.googleapis.com/css2?family=Rajdhani:wght@500;700;900&family=Fira+Code:wght@400;600&display=swap');
 
     ::-webkit-scrollbar { width: 6px; height: 6px; }
     ::-webkit-scrollbar-track { background: rgba(0, 0, 0, 0.4); }
@@ -141,12 +140,12 @@
   <div id="root"></div>
 
   <script type="text/babel" data-type="module">
-    import React, { useState, useEffect, useRef } from '[https://esm.sh/react@18.2.0](https://esm.sh/react@18.2.0)';
-    import { createRoot } from '[https://esm.sh/react-dom@18.2.0/client](https://esm.sh/react-dom@18.2.0/client)';
+    import React, { useState, useEffect, useRef } from 'https://esm.sh/react@18.2.0';
+    import { createRoot } from 'https://esm.sh/react-dom@18.2.0/client';
     import { 
       Flame, CheckCircle2, Swords, Search, Tag, ImageIcon,
       Plus, FileText, Upload, ArrowLeft, TerminalSquare, Trash2, Target, Zap
-    } from '[https://esm.sh/lucide-react@0.263.1](https://esm.sh/lucide-react@0.263.1)';
+    } from 'https://esm.sh/lucide-react@0.263.1';
 
     // 核心修复：稳定版 Marked 配置，开启原生 Highlighting
     marked.setOptions({
@@ -624,7 +623,7 @@
                         <input type="file" accept=".md,.txt" onChange={handleMdFileUpload} className="hidden" />
                       </label>
                     </label>
-                    <textarea value={markdownContent} onChange={(e) => setMarkdownContent(e.target.value)} placeholder={`输入 Markdown 数据...\n支持 $$LaTeX$$ 与 cpp 代码块`} rows="5" className="w-full bg-transparent border-t border-slate-800 text-slate-300 pt-3 focus:outline-none font-mono text-sm leading-relaxed" />
+                    <textarea value={markdownContent} onChange={(e) => setMarkdownContent(e.target.value)} placeholder="输入 Markdown 数据，支持 LaTeX 与代码块..." rows="5" className="w-full bg-transparent border-t border-slate-800 text-slate-300 pt-3 focus:outline-none font-mono text-sm leading-relaxed" />
                   </div>
 
                   <div>
