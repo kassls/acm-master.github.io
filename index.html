@@ -5,13 +5,15 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>ACMer 核心控制台 - 纯粹极客版</title>
   
-  <script src="https://cdn.tailwindcss.com"></script>
-  <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
+  <script src="[https://cdn.tailwindcss.com](https://cdn.tailwindcss.com)"></script>
+  <script src="[https://unpkg.com/@babel/standalone/babel.min.js](https://unpkg.com/@babel/standalone/babel.min.js)"></script>
   
-  <!-- Marked & Highlight.js 完美组合 -->
-  <script src="https://cdn.jsdelivr.net/npm/marked/marked.min.js"></script>
-  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.8.0/styles/dracula.min.css">
-  <script src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.8.0/highlight.min.js"></script>
+  <!-- 核心修复 1：锁定 Marked.js 到稳定支持高亮的 v4.3.0 版本 -->
+  <script src="[https://cdn.jsdelivr.net/npm/marked@4.3.0/marked.min.js](https://cdn.jsdelivr.net/npm/marked@4.3.0/marked.min.js)"></script>
+  <link rel="stylesheet" href="[https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.8.0/styles/dracula.min.css](https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.8.0/styles/dracula.min.css)">
+  <script src="[https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.8.0/highlight.min.js](https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.8.0/highlight.min.js)"></script>
+  <!-- 确保 C++ 语法包被加载 -->
+  <script src="[https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.8.0/languages/cpp.min.js](https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.8.0/languages/cpp.min.js)"></script>
 
   <!-- MathJax -->
   <script>
@@ -20,10 +22,10 @@
       startup: { typeset: false }
     };
   </script>
-  <script id="MathJax-script" async src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-mml-chtml.js"></script>
+  <script id="MathJax-script" async src="[https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-mml-chtml.js](https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-mml-chtml.js)"></script>
 
   <style>
-    @import url('https://fonts.googleapis.com/css2?family=Rajdhani:wght@500;700;900&family=Fira+Code:wght@400;600&display=swap');
+    @import url('[https://fonts.googleapis.com/css2?family=Rajdhani:wght@500;700;900&family=Fira+Code:wght@400;600&display=swap](https://fonts.googleapis.com/css2?family=Rajdhani:wght@500;700;900&family=Fira+Code:wght@400;600&display=swap)');
 
     ::-webkit-scrollbar { width: 6px; height: 6px; }
     ::-webkit-scrollbar-track { background: rgba(0, 0, 0, 0.4); }
@@ -51,7 +53,7 @@
 
     /* === 极致通透毛玻璃 HUD 面板 === */
     .hud-panel {
-      background: rgba(10, 15, 25, 0.35); /* 高度透明，透出背后星云 */
+      background: rgba(10, 15, 25, 0.35); /* 高度透明，透出背后星际 */
       backdrop-filter: blur(16px) saturate(150%);
       -webkit-backdrop-filter: blur(16px) saturate(150%);
       border: 1px solid rgba(6, 182, 212, 0.25);
@@ -63,7 +65,6 @@
       box-shadow: 0 0 30px rgba(217, 70, 239, 0.2) inset;
     }
 
-    /* 面板内的输入框和卡片进一步毛玻璃化 */
     .hud-inner-glass {
       background: rgba(0, 0, 0, 0.3);
       backdrop-filter: blur(8px);
@@ -113,23 +114,21 @@
     .md-prose ul { list-style-type: disc; padding-left: 1.5em; }
     .md-prose ol { list-style-type: decimal; padding-left: 1.5em; }
     
-    /* 单独的行内代码高亮 (微透粉色) */
     .md-prose code:not(pre code) { 
       font-family: 'Fira Code', monospace; background: rgba(217, 70, 239, 0.15); color: #f472b6; 
       padding: 0.2em 0.4em; border-radius: 4px; font-size: 0.9em; 
     }
     
-    /* 大代码块背景 (保留 Dracula 背景色) */
     .md-prose pre { 
       background: #282a36 !important; 
       padding: 1.2em !important; border-radius: 8px; overflow-x: auto; 
       margin: 1.5em 0; border: 1px solid rgba(255,255,255,0.1); box-shadow: 0 4px 6px rgba(0,0,0,0.5); 
     }
     
-    /* 核心修复：移除颜色强制覆盖，让 HLJS 自己着色 */
     .md-prose pre code { 
       background: transparent !important; padding: 0 !important; 
       font-family: 'Fira Code', monospace; font-size: 0.9em; 
+      color: inherit; /* 交给 highlight.js 渲染 */
     }
     
     .md-prose blockquote { 
@@ -142,18 +141,27 @@
   <div id="root"></div>
 
   <script type="text/babel" data-type="module">
-    import React, { useState, useEffect, useRef } from 'https://esm.sh/react@18.2.0';
-    import { createRoot } from 'https://esm.sh/react-dom@18.2.0/client';
+    import React, { useState, useEffect, useRef } from '[https://esm.sh/react@18.2.0](https://esm.sh/react@18.2.0)';
+    import { createRoot } from '[https://esm.sh/react-dom@18.2.0/client](https://esm.sh/react-dom@18.2.0/client)';
     import { 
       Flame, CheckCircle2, Swords, Search, Tag, ImageIcon,
       Plus, FileText, Upload, ArrowLeft, TerminalSquare, Trash2, Target, Zap
-    } from 'https://esm.sh/lucide-react@0.263.1';
+    } from '[https://esm.sh/lucide-react@0.263.1](https://esm.sh/lucide-react@0.263.1)';
 
-    // 配置 Marked 语法解析
-    marked.setOptions({ breaks: true, gfm: true });
+    // 核心修复：稳定版 Marked 配置，开启原生 Highlighting
+    marked.setOptions({
+      breaks: true,
+      gfm: true,
+      highlight: function(code, lang) {
+        if (lang && hljs.getLanguage(lang)) {
+          return hljs.highlight(code, { language: lang }).value;
+        }
+        return hljs.highlightAuto(code).value;
+      }
+    });
 
     // ==========================================
-    // 纯粹 2D 粒子引擎：浩瀚星云与光速虫洞
+    // 纯粹 3D 星际跃迁引擎：解决“太乱”的核心
     // ==========================================
     const ParticleEngine = ({ isGodMode, burstTrigger }) => {
       const canvasRef = useRef(null);
@@ -164,15 +172,14 @@
         let w = canvas.width = window.innerWidth;
         let h = canvas.height = window.innerHeight;
 
-        const particles = [];
-        const particleCount = 2000; // 粒子数量暴增至 2000 颗！
+        const stars = [];
+        const numStars = 2000; // 宏大数量级
 
-        for (let i = 0; i < particleCount; i++) {
-          particles.push({
-            angle: Math.random() * Math.PI * 2,
-            radius: Math.random() * w, // 遍布全屏
-            speed: Math.random() * 2 + 0.1,
-            size: Math.random() * 2 + 0.5,
+        for (let i = 0; i < numStars; i++) {
+          stars.push({
+            x: (Math.random() - 0.5) * w * 2,
+            y: (Math.random() - 0.5) * h * 2,
+            z: Math.random() * w,
             colorOffset: Math.random() * 360,
           });
         }
@@ -183,64 +190,65 @@
 
         const animate = () => {
           time++;
-          if (burstMultiplier > 1) burstMultiplier *= 0.95; // 爆发后衰减
+          if (burstMultiplier > 1) burstMultiplier *= 0.95;
 
-          // 残影底色
-          ctx.fillStyle = isGodMode 
-            ? `rgba(5, 5, 10, ${0.15 / burstMultiplier})` 
-            : 'rgba(2, 5, 10, 0.3)';
+          // 纯粹的黑底刷屏，彻底杜绝残影线条堆积导致的“乱”
+          ctx.fillStyle = `rgba(3, 5, 8, ${0.4 / burstMultiplier})`;
           ctx.fillRect(0, 0, w, h);
 
-          // 核心光晕
-          const coreRadius = isGodMode ? 100 : 150;
-          const gradient = ctx.createRadialGradient(w/2, h/2, 0, w/2, h/2, coreRadius * 3);
-          if (isGodMode) {
-             const hueShift = (time * 2) % 360;
-             gradient.addColorStop(0, `hsla(${hueShift}, 100%, 50%, ${0.3 * burstMultiplier})`);
-             gradient.addColorStop(1, 'transparent');
-          } else {
-             gradient.addColorStop(0, 'rgba(6, 182, 212, 0.15)');
-             gradient.addColorStop(1, 'transparent');
-          }
-          ctx.fillStyle = gradient;
-          ctx.fillRect(0, 0, w, h);
-
+          const cx = w / 2;
+          const cy = h / 2;
+          
           ctx.globalCompositeOperation = 'lighter';
 
-          particles.forEach(p => {
+          stars.forEach(star => {
+            const pz = star.z;
+            
+            // 核心动态逻辑
             if (isGodMode) {
-              // 【>= 5 题】虫洞跃迁：向外极速扩散，产生 3D 穿梭感
-              p.angle += 0.01 * burstMultiplier;
-              p.radius += p.speed * 4 * burstMultiplier;
-              p.size = (p.radius / w) * 4 + 1; // 越近越大
+              // >= 5题：迎面极速冲击的光速跃迁通道 (完全笔直、干净)
+              star.z -= 15 * burstMultiplier;
             } else {
-              // 【< 5 题】浩瀚星云：广阔平稳的巨型漩涡
-              p.angle += 0.002;
-              p.radius += p.speed * 0.4;
-              p.size = 1.5;
+              // < 5题：巨大宏伟的缓慢旋转星系
+              star.z -= 0.5;
+              // 应用 3D 旋转矩阵
+              const cos = Math.cos(0.001);
+              const sin = Math.sin(0.001);
+              const nx = star.x * cos - star.y * sin;
+              const ny = star.x * sin + star.y * cos;
+              star.x = nx;
+              star.y = ny;
             }
 
-            if (p.radius > Math.max(w, h)) {
-              p.radius = Math.random() * 50; // 重生在核心
-              p.angle = Math.random() * Math.PI * 2;
+            // 回收粒子
+            if (star.z < 1) {
+              star.z = w;
+              star.x = (Math.random() - 0.5) * w * 2;
+              star.y = (Math.random() - 0.5) * h * 2;
+              return;
             }
 
-            const x = w/2 + Math.cos(p.angle) * p.radius;
-            const y = h/2 + Math.sin(p.angle) * p.radius;
+            // 3D 投影到 2D
+            const x = cx + (star.x / star.z) * w;
+            const y = cy + (star.y / star.z) * w;
+            const px = cx + (star.x / pz) * w;
+            const py = cy + (star.y / pz) * w;
 
             ctx.beginPath();
-            ctx.arc(x, y, p.size, 0, Math.PI * 2);
-            
+            ctx.moveTo(px, py);
+            ctx.lineTo(x, y);
+
             if (isGodMode) {
-              // 七彩流光粒子
-              const hue = (time * 3 + p.colorOffset) % 360;
-              ctx.fillStyle = `hsla(${hue}, 100%, 65%, ${1 - p.radius/(w*1.5)})`;
+              // 跃迁状态：纯粹的笔直七彩线条
+              ctx.lineWidth = (1 - star.z / w) * 6 + 0.5;
+              const hue = (time * 2 + star.colorOffset) % 360;
+              ctx.strokeStyle = `hsla(${hue}, 100%, 65%, ${1 - star.z / w})`;
             } else {
-              // 赛博青蓝色星系
-              const hue = 190 + (p.colorOffset % 30);
-              ctx.fillStyle = `hsla(${hue}, 100%, 60%, ${1 - p.radius/w})`;
+              // 日常状态：星点和微弱拖尾
+              ctx.lineWidth = (1 - star.z / w) * 3 + 0.5;
+              ctx.strokeStyle = `rgba(6, 182, 212, ${1 - star.z / w})`;
             }
-            ctx.fill();
+            ctx.stroke();
           });
 
           ctx.globalCompositeOperation = 'source-over';
@@ -249,7 +257,7 @@
 
         animate();
 
-        if (burstTrigger) burstMultiplier = 8; // 触发全屏爆发
+        if (burstTrigger) burstMultiplier = 6;
 
         const handleResize = () => { w = canvas.width = window.innerWidth; h = canvas.height = window.innerHeight; };
         window.addEventListener('resize', handleResize);
@@ -268,8 +276,9 @@
 
       useEffect(() => {
         if (contentRef.current) {
-          // 在渲染完成后，找到所有代码块并让 Highlight.js 着色
+          // 双重保险：强制触发 Highlight.js 以确保 C++ 着色生效
           contentRef.current.querySelectorAll('pre code').forEach((block) => {
+            delete block.dataset.highlighted; 
             hljs.highlightElement(block);
           });
         }
@@ -455,7 +464,7 @@
             </div>
           )}
 
-          {/* 性能重构的终极双态引擎 */}
+          {/* 性能重构的终极 3D 跃迁引擎 */}
           <ParticleEngine isGodMode={isGodMode} burstTrigger={flashEffect} />
 
           <div className="max-w-7xl mx-auto space-y-8 relative z-10 p-4 md:p-8">
@@ -615,7 +624,7 @@
                         <input type="file" accept=".md,.txt" onChange={handleMdFileUpload} className="hidden" />
                       </label>
                     </label>
-                    <textarea value={markdownContent} onChange={(e) => setMarkdownContent(e.target.value)} placeholder="输入 Markdown 数据... 支持 $$LaTeX$$ 与 cpp 代码块" rows="5" className="w-full bg-transparent border-t border-slate-800 text-slate-300 pt-3 focus:outline-none font-mono text-sm leading-relaxed" />
+                    <textarea value={markdownContent} onChange={(e) => setMarkdownContent(e.target.value)} placeholder={`输入 Markdown 数据...\n支持 $$LaTeX$$ 与 cpp 代码块`} rows="5" className="w-full bg-transparent border-t border-slate-800 text-slate-300 pt-3 focus:outline-none font-mono text-sm leading-relaxed" />
                   </div>
 
                   <div>
