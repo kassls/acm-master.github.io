@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>青云白霓v4.0</title>
+  <title>青云白霓v4.1</title>
   
   <!-- 稳定 CDN 节点，防国内屏蔽 -->
   <script src="https://cdn.tailwindcss.com"></script>
@@ -53,7 +53,6 @@
 
     /* === 极致通透毛玻璃 HUD 面板 === */
     .hud-panel {
-      /* 极低的 Alpha 值保证背后的星轨/漩涡完全透出 */
       background: rgba(8, 12, 20, 0.2); 
       backdrop-filter: blur(16px) saturate(120%);
       -webkit-backdrop-filter: blur(16px) saturate(120%);
@@ -66,10 +65,25 @@
       box-shadow: 0 0 30px rgba(217, 70, 239, 0.15) inset;
     }
 
-    /* 内部元素只加浅色蒙版，杜绝嵌套 blur 导致的黑块 */
     .hud-inner-glass {
       background: rgba(255, 255, 255, 0.03);
       border: 1px solid rgba(255, 255, 255, 0.05);
+    }
+
+    /* === 深度美化 Select Dropdown === */
+    .cyber-select {
+      appearance: none;
+      -webkit-appearance: none;
+      background-image: url("data:image/svg+xml;charset=UTF-8,%3csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%2306b6d4' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3e%3cpolyline points='6 9 12 15 18 9'%3e%3c/polyline%3e%3c/svg%3e");
+      background-repeat: no-repeat;
+      background-position: right 1rem center;
+      background-size: 1.2em;
+    }
+    .cyber-select option {
+      background-color: #0b1120; /* 深邃赛博底色，避免白底 */
+      color: #e2e8f0;
+      font-family: 'Rajdhani', sans-serif;
+      font-weight: bold;
     }
 
     /* === 能量槽动态流光 === */
@@ -106,7 +120,7 @@
       box-shadow: 0 8px 32px 0 rgba(0, 0, 0, 0.5);
     }
 
-    /* === Markdown 极客渲染体系 (已彻底修复 C++ 高亮拦截问题) === */
+    /* === Markdown 极客渲染体系 (修复代码高亮与毛玻璃完美融合) === */
     .md-prose { color: #e2e8f0; font-size: 1.05rem; line-height: 1.8; word-break: break-word; }
     .md-prose h1, .md-prose h2, .md-prose h3 { color: #ffffff; font-family: 'Rajdhani', sans-serif; font-weight: 700; margin-top: 1.5em; margin-bottom: 0.5em; letter-spacing: 0.5px; }
     .md-prose h1 { font-size: 2.25rem; border-bottom: 2px solid rgba(6, 182, 212, 0.4); padding-bottom: 0.3em; }
@@ -121,9 +135,9 @@
       padding: 0.2em 0.4em; border-radius: 4px; font-size: 0.9em; 
     }
     
-    /* 为 Markdown 中的代码块独立构建通透毛玻璃 */
+    /* 核心修复：毛玻璃仅作用于最外层容器 */
     .md-prose pre { 
-      background: rgba(20, 25, 35, 0.5) !important; /* 强制覆盖 Dracula 的背景底色 */
+      background: rgba(15, 20, 30, 0.6) !important; 
       backdrop-filter: blur(12px);
       -webkit-backdrop-filter: blur(12px);
       border: 1px solid rgba(6, 182, 212, 0.25);
@@ -134,7 +148,7 @@
       margin: 1.5em 0; 
     }
     
-    /* 清除 HLJS 内部强制注入的背景，让外层的 pre 毛玻璃接管背景 */
+    /* 清除内部元素的默认背景，允许 highlight.js 色彩透出 */
     .md-prose pre code.hljs { 
       background: transparent !important; 
       padding: 0 !important; 
@@ -159,22 +173,13 @@
       Plus, FileText, Upload, ArrowLeft, TerminalSquare, Trash2, Target, Zap
     } from 'https://esm.sh/lucide-react@0.263.1';
 
-    // 初始化 Marked 引擎，直接在解析时挂载 Highlight.js，彻底解决 React 环境下的 DOM 节点渲染竞争问题
-    if (typeof marked !== 'undefined' && window.hljs) {
-      marked.setOptions({
-        breaks: true,
-        gfm: true,
-        highlight: function (code, lang) {
-          if (lang && hljs.getLanguage(lang)) {
-            return hljs.highlight(code, { language: lang }).value;
-          }
-          return hljs.highlightAuto(code).value;
-        }
-      });
+    // 恢复安全的 Markdown 配置，将高亮任务交还给 React 生命周期
+    if (typeof marked !== 'undefined') {
+      marked.setOptions({ breaks: true, gfm: true });
     }
 
     // ==========================================
-    // 3D 粒子双态引擎：大漩涡 (Vortex) / 隧道 (Tunnel)
+    // 3D 粒子双态引擎 (已彻底解决卡顿与向内吸积感)
     // ==========================================
     const ParticleEngine = ({ isGodMode, burstTrigger }) => {
       const canvasRef = useRef(null);
@@ -185,17 +190,15 @@
         let w = canvas.width = window.innerWidth;
         let h = canvas.height = window.innerHeight;
 
-        // 提升粒子基数，大漩涡需要极其庞大的粒子规模
         const numStars = 4000;
         const stars = Array.from({ length: numStars }, () => ({
           angle: Math.random() * Math.PI * 2,
-          radius: Math.random() * w * 1.5,
+          radius: isGodMode ? (w * 0.2 + Math.random() * w * 0.25) : (Math.random() * w * 1.5),
           z: Math.random() * w,
           randomOffset: Math.random(),
           prevAngle: 0, prevRadius: 0, prevZ: 0
         }));
 
-        // 初始化前驱坐标，防止第一帧拉丝
         stars.forEach(s => { s.prevAngle = s.angle; s.prevRadius = s.radius; s.prevZ = s.z; });
 
         let animationId;
@@ -206,7 +209,6 @@
           time++;
           if (burstMultiplier > 1) burstMultiplier *= 0.95;
 
-          // 使用深色半透明进行残影覆盖
           ctx.fillStyle = `rgba(3, 5, 8, ${0.4 / burstMultiplier})`;
           ctx.fillRect(0, 0, w, h);
 
@@ -215,62 +217,65 @@
           ctx.globalCompositeOperation = 'lighter';
 
           stars.forEach(star => {
-            // 记录旧帧数据
             star.prevAngle = star.angle;
             star.prevRadius = star.radius;
             star.prevZ = star.z;
 
+            let isWrapped = false; // 用于判定越界重置，杜绝横跨屏幕的乱线
+
             if (isGodMode) {
-              // 【状态：隧道 / Tunnel】 -> 强制往圆柱体壁靠拢，极高 Z 轴速度
-              const targetRadius = w * 0.25 + star.randomOffset * w * 0.2; // 隧道管径
-              star.radius += (targetRadius - star.radius) * 0.1;
-              star.z -= (25 + star.randomOffset * 15) * burstMultiplier;
-              star.angle += 0.003; // 轻微自旋
+              // 【平滑隧道】：锁定轨道半径，通过首尾无缝相接彻底解决卡顿
+              star.z -= (28 + star.randomOffset * 15) * burstMultiplier;
+              star.angle += 0.002; // 整个隧道缓缓旋转，增强立体感
+              
+              if (star.z < 1) {
+                star.z += w; // Wrap-around：不重新随机分配位置，完美首尾相接
+                isWrapped = true;
+              }
             } else {
-              // 【状态：大漩涡 / Vortex】 -> 半径不断向中心塌陷，角速度随向心力增大
-              star.radius -= (1.5 + star.randomOffset);
-              // 越靠近核心转得越快
-              const spinSpeed = 0.005 + (w / Math.max(10, star.radius)) * 0.001; 
-              star.angle -= spinSpeed;
-              star.z -= 1.0; 
+              // 【向外膨胀大漩涡】：半径不断扩张，转速放缓
+              star.radius += (1 + star.randomOffset * 1.5);
+              star.angle += 0.001; // 极慢的向外旋，避免眩晕
+              star.z -= (1.5 + star.randomOffset);
+              
+              if (star.radius > w * 1.5 || star.z < 1) {
+                // 重生在视觉深处/中心
+                star.radius = Math.random() * 20;
+                star.angle = Math.random() * Math.PI * 2;
+                star.z = w;
+                isWrapped = true;
+              }
             }
 
-            // 越界重置
-            if (star.z < 1 || star.radius < 1) {
-              star.z = w;
-              // 隧道模式下直接生在管壁上，漩涡模式下生在极远的外围
-              star.radius = isGodMode ? (w * 0.25 + Math.random() * w * 0.2) : (w * 1.2 * Math.random());
-              star.angle = Math.random() * Math.PI * 2;
-              star.prevAngle = star.angle;
-              star.prevRadius = star.radius;
-              star.prevZ = star.z;
-              return; // 跳过当前帧绘制
-            }
-
-            // 极坐标系转 3D 透视坐标
             const px = cx + (Math.cos(star.prevAngle) * star.prevRadius / star.prevZ) * w;
             const py = cy + (Math.sin(star.prevAngle) * star.prevRadius / star.prevZ) * w;
             const nx = cx + (Math.cos(star.angle) * star.radius / star.z) * w;
             const ny = cy + (Math.sin(star.angle) * star.radius / star.z) * w;
 
-            ctx.beginPath();
-            ctx.moveTo(px, py);
-            ctx.lineTo(nx, ny);
+            // 只有在未发生跃迁越界时才绘制轨迹连线
+            if (!isWrapped) {
+              ctx.beginPath();
+              ctx.moveTo(px, py);
+              ctx.lineTo(nx, ny);
 
-            const depthAlpha = Math.max(0, 1 - star.z / w);
-            
-            if (isGodMode) {
-              // 隧道模式：高能七彩光效
-              const hue = (time * 4 + star.randomOffset * 360) % 360;
-              ctx.strokeStyle = `hsla(${hue}, 100%, 70%, ${depthAlpha})`;
-              ctx.lineWidth = depthAlpha * 5 + 1;
+              const depthAlpha = Math.max(0, 1 - star.z / w);
+              
+              if (isGodMode) {
+                const hue = (time * 4 + star.randomOffset * 360) % 360;
+                ctx.strokeStyle = `hsla(${hue}, 100%, 70%, ${depthAlpha})`;
+                ctx.lineWidth = depthAlpha * 5 + 1;
+              } else {
+                const hue = 180 + star.randomOffset * 80; 
+                ctx.strokeStyle = `hsla(${hue}, 100%, 65%, ${depthAlpha * 0.8})`;
+                ctx.lineWidth = depthAlpha * 2.5 + 0.5;
+              }
+              ctx.stroke();
             } else {
-              // 漩涡模式：深邃的青蓝紫赛博空间感
-              const hue = 180 + star.randomOffset * 80; 
-              ctx.strokeStyle = `hsla(${hue}, 100%, 65%, ${depthAlpha * 0.8})`;
-              ctx.lineWidth = depthAlpha * 2.5 + 0.5;
+              // 更新越界后的 prev 数据，防止下一帧拉长线
+              star.prevAngle = star.angle;
+              star.prevRadius = star.radius;
+              star.prevZ = star.z;
             }
-            ctx.stroke();
           });
 
           ctx.globalCompositeOperation = 'source-over';
@@ -286,7 +291,6 @@
         return () => { cancelAnimationFrame(animationId); window.removeEventListener('resize', handleResize); };
       }, [isGodMode, burstTrigger]);
 
-      // 使用 mix-blend-screen 将 canvas 黑色背景完全透明化，只留下高亮粒子
       return <canvas ref={canvasRef} className="fixed inset-0 z-0 pointer-events-none mix-blend-screen" />;
     };
 
@@ -298,9 +302,17 @@
       const [showBgSettings, setShowBgSettings] = useState(false);
 
       useEffect(() => {
-        // 执行公式渲染。注意：代码的高亮已经在 marked 的配置中同步完成了，无需再手动调用 querySelectorAll 和 hljs
-        if (contentRef.current && window.MathJax && window.MathJax.typesetPromise) { 
-          window.MathJax.typesetPromise([contentRef.current]).catch((err) => console.log(err)); 
+        // 生命周期的安全绑定，确保 HLJS 能获取 DOM 并挂载样式 class
+        if (contentRef.current) {
+          if (window.hljs) {
+            contentRef.current.querySelectorAll('pre code').forEach((block) => {
+              delete block.dataset.highlighted; 
+              window.hljs.highlightElement(block);
+            });
+          }
+          if (window.MathJax && window.MathJax.typesetPromise) { 
+            window.MathJax.typesetPromise([contentRef.current]).catch((err) => console.log(err)); 
+          }
         }
       }, [problem]);
 
@@ -494,7 +506,6 @@
             </div>
           )}
 
-          {/* 渲染层级被设置在 z-0，与背景色混合。HUD 面板则是透过毛玻璃展现它。 */}
           <ParticleEngine isGodMode={isGodMode} burstTrigger={flashEffect} />
 
           <div className="max-w-7xl mx-auto space-y-8 relative z-10 p-4 md:p-8">
@@ -509,7 +520,7 @@
                   <h1 className="text-2xl md:text-3xl font-sci-fi font-black text-white tracking-widest uppercase">
                     ACMer <span className={isGodMode ? 'text-fuchsia-400 drop-shadow-[0_0_10px_#d946ef]' : 'text-cyan-400'}>NEXUS</span>
                   </h1>
-                  <p className="text-slate-500 text-xs font-mono tracking-widest mt-1">v4.0 // HUD_ONLINE</p>
+                  <p className="text-slate-500 text-xs font-mono tracking-widest mt-1">v4.1 // HUD_ONLINE</p>
                 </div>
               </div>
               <div className="text-right hidden md:block relative z-10">
@@ -557,7 +568,6 @@
 
             <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
               
-              {/* 高级通透毛玻璃视图 */}
               <div className="lg:col-span-2 hud-panel flex flex-col border-t-4 border-t-cyan-500" style={{ maxHeight: '800px' }}>
                 <div className="scanlines"></div>
                 <div className="p-6 border-b border-cyan-500/20 hud-inner-glass flex flex-col sm:flex-row sm:items-center justify-between gap-4 relative z-10">
@@ -637,14 +647,17 @@
                 <form onSubmit={handleAddProblem} className="space-y-6 relative z-10">
                   <div>
                     <label className="block text-xs font-bold text-slate-500 mb-2 font-mono uppercase">Platform</label>
-                    <select value={newPlatform} onChange={(e) => setNewPlatform(e.target.value)} className="w-full bg-black/40 border border-slate-700 text-slate-100 px-4 py-3 focus:border-blue-500 outline-none font-sci-fi font-bold text-base tracking-widest uppercase backdrop-blur-sm" style={{ transform: 'skewX(-5deg)' }}>
-                      <option>Codeforces</option> <option>AtCoder</option> <option>LeetCode</option> <option>Luogu</option>
+                    <select value={newPlatform} onChange={(e) => setNewPlatform(e.target.value)} className="cyber-select w-full bg-black/40 border border-slate-700 text-slate-100 px-4 py-3 focus:border-blue-500 outline-none font-sci-fi font-bold text-base tracking-widest uppercase backdrop-blur-sm transition-colors" style={{ transform: 'skewX(-5deg)' }}>
+                      <option value="Codeforces">Codeforces</option> 
+                      <option value="AtCoder">AtCoder</option> 
+                      <option value="牛客">牛客</option> 
+                      <option value="luogu">luogu</option>
                     </select>
                   </div>
 
                   <div>
                     <label className="block text-xs font-bold text-slate-500 mb-2 font-mono uppercase">Problem Title</label>
-                    <input type="text" value={newTitle} onChange={(e) => setNewTitle(e.target.value)} placeholder="e.g. A. Watermelon" className="w-full bg-black/40 border border-slate-700 text-slate-100 px-4 py-3 focus:border-blue-500 outline-none font-bold text-base backdrop-blur-sm" style={{ transform: 'skewX(-5deg)' }} />
+                    <input type="text" value={newTitle} onChange={(e) => setNewTitle(e.target.value)} placeholder="e.g. A. Watermelon" className="w-full bg-black/40 border border-slate-700 text-slate-100 px-4 py-3 focus:border-blue-500 outline-none font-bold text-base backdrop-blur-sm transition-colors" style={{ transform: 'skewX(-5deg)' }} />
                   </div>
 
                   <div className="p-4 hud-inner-glass border border-slate-700/50 relative">
