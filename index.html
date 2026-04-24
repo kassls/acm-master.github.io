@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>青云白霓v4.1</title>
+  <title>青云白霓 v5.0</title>
   
   <!-- 稳定 CDN 节点，防国内屏蔽 -->
   <script src="https://cdn.tailwindcss.com"></script>
@@ -80,7 +80,7 @@
       background-size: 1.2em;
     }
     .cyber-select option {
-      background-color: #0b1120; /* 深邃赛博底色，避免白底 */
+      background-color: #0b1120;
       color: #e2e8f0;
       font-family: 'Rajdhani', sans-serif;
       font-weight: bold;
@@ -120,7 +120,7 @@
       box-shadow: 0 8px 32px 0 rgba(0, 0, 0, 0.5);
     }
 
-    /* === Markdown 极客渲染体系 (修复代码高亮与毛玻璃完美融合) === */
+    /* === Markdown 极客渲染体系 (已彻底修复 C++ 语法高亮) === */
     .md-prose { color: #e2e8f0; font-size: 1.05rem; line-height: 1.8; word-break: break-word; }
     .md-prose h1, .md-prose h2, .md-prose h3 { color: #ffffff; font-family: 'Rajdhani', sans-serif; font-weight: 700; margin-top: 1.5em; margin-bottom: 0.5em; letter-spacing: 0.5px; }
     .md-prose h1 { font-size: 2.25rem; border-bottom: 2px solid rgba(6, 182, 212, 0.4); padding-bottom: 0.3em; }
@@ -135,9 +135,9 @@
       padding: 0.2em 0.4em; border-radius: 4px; font-size: 0.9em; 
     }
     
-    /* 核心修复：毛玻璃仅作用于最外层容器 */
+    /* 强力接管代码块外层，实现毛玻璃与通透感 */
     .md-prose pre { 
-      background: rgba(15, 20, 30, 0.6) !important; 
+      background: rgba(15, 20, 30, 0.5) !important; 
       backdrop-filter: blur(12px);
       -webkit-backdrop-filter: blur(12px);
       border: 1px solid rgba(6, 182, 212, 0.25);
@@ -148,12 +148,13 @@
       margin: 1.5em 0; 
     }
     
-    /* 清除内部元素的默认背景，允许 highlight.js 色彩透出 */
+    /* 允许 Highlight.js 内置语法颜色透传 */
     .md-prose pre code.hljs { 
       background: transparent !important; 
       padding: 0 !important; 
       font-family: 'Fira Code', monospace; 
       font-size: 0.9em; 
+      color: #f8f8f2; /* Dracula 基础文字颜色 */
     }
     
     .md-prose blockquote { 
@@ -170,16 +171,25 @@
     import { createRoot } from 'https://esm.sh/react-dom@18.2.0/client';
     import { 
       Flame, CheckCircle2, Swords, Search, Tag, ImageIcon,
-      Plus, FileText, Upload, ArrowLeft, TerminalSquare, Trash2, Target, Zap
+      Plus, FileText, Upload, ArrowLeft, TerminalSquare, Trash2, Target, Zap, Clock
     } from 'https://esm.sh/lucide-react@0.263.1';
 
-    // 恢复安全的 Markdown 配置，将高亮任务交还给 React 生命周期
-    if (typeof marked !== 'undefined') {
-      marked.setOptions({ breaks: true, gfm: true });
+    // 核心修复：直接将 Highlight.js 编译逻辑注入 Marked 底层，杜绝 React 生命周期干涉导致的渲染失效
+    if (typeof marked !== 'undefined' && window.hljs) {
+      marked.setOptions({
+        breaks: true,
+        gfm: true,
+        highlight: function (code, lang) {
+          if (lang && window.hljs.getLanguage(lang)) {
+            return window.hljs.highlight(code, { language: lang }).value;
+          }
+          return window.hljs.highlightAuto(code).value;
+        }
+      });
     }
 
     // ==========================================
-    // 3D 粒子双态引擎 (已彻底解决卡顿与向内吸积感)
+    // 3D 粒子双态引擎 v5.0：宏伟星云漩涡 & 绝对时空隧道
     // ==========================================
     const ParticleEngine = ({ isGodMode, burstTrigger }) => {
       const canvasRef = useRef(null);
@@ -190,10 +200,11 @@
         let w = canvas.width = window.innerWidth;
         let h = canvas.height = window.innerHeight;
 
-        const numStars = 4000;
+        // 粒子数暴增至 6000 颗，确保宏大的体积感
+        const numStars = 6000;
         const stars = Array.from({ length: numStars }, () => ({
           angle: Math.random() * Math.PI * 2,
-          radius: isGodMode ? (w * 0.2 + Math.random() * w * 0.25) : (Math.random() * w * 1.5),
+          radius: Math.random() * w, // 漩涡出生点
           z: Math.random() * w,
           randomOffset: Math.random(),
           prevAngle: 0, prevRadius: 0, prevZ: 0
@@ -209,38 +220,49 @@
           time++;
           if (burstMultiplier > 1) burstMultiplier *= 0.95;
 
-          ctx.fillStyle = `rgba(3, 5, 8, ${0.4 / burstMultiplier})`;
+          ctx.fillStyle = `rgba(3, 5, 8, ${0.35 / burstMultiplier})`;
           ctx.fillRect(0, 0, w, h);
 
           const cx = w / 2;
           const cy = h / 2;
           ctx.globalCompositeOperation = 'lighter';
 
+          // 计算隧道的动态呼吸半径 (Base + Sin 波动)
+          const tunnelBreathingOffset = Math.sin(time * 0.015) * (w * 0.08);
+          const tunnelBaseRadius = w * 0.3 + tunnelBreathingOffset;
+
           stars.forEach(star => {
             star.prevAngle = star.angle;
             star.prevRadius = star.radius;
             star.prevZ = star.z;
 
-            let isWrapped = false; // 用于判定越界重置，杜绝横跨屏幕的乱线
+            let isWrapped = false;
 
             if (isGodMode) {
-              // 【平滑隧道】：锁定轨道半径，通过首尾无缝相接彻底解决卡顿
-              star.z -= (28 + star.randomOffset * 15) * burstMultiplier;
-              star.angle += 0.002; // 整个隧道缓缓旋转，增强立体感
+              // 【状态：绝对隧道】
+              // 强制约束到圆柱体表面 (加上极微小的 randomOffset 作为墙壁厚度)
+              star.radius = tunnelBaseRadius + (star.randomOffset - 0.5) * 30;
               
+              // 速度大幅度放慢，形成漫游感
+              star.z -= (8 + star.randomOffset * 4) * burstMultiplier;
+              star.angle += 0.003; // 整个粒子墙缓慢旋转
+              
+              // 无缝衔接首尾
               if (star.z < 1) {
-                star.z += w; // Wrap-around：不重新随机分配位置，完美首尾相接
+                star.z += w;
                 isWrapped = true;
               }
             } else {
-              // 【向外膨胀大漩涡】：半径不断扩张，转速放缓
-              star.radius += (1 + star.randomOffset * 1.5);
-              star.angle += 0.001; // 极慢的向外旋，避免眩晕
-              star.z -= (1.5 + star.randomOffset);
+              // 【状态：宏伟星云漩涡】
+              // 从中心向外螺旋发散，越靠中心角速度越快
+              const distRatio = Math.max(0.1, star.radius / (w * 0.5));
+              star.angle += 0.015 / distRatio; // 漩涡差速旋转核心逻辑
+              star.radius += 2 + distRatio * 2; // 向外螺旋膨胀
+              star.z -= 1.5; // 轻微向摄像机移动
               
+              // 逃逸后在中心深渊重生
               if (star.radius > w * 1.5 || star.z < 1) {
-                // 重生在视觉深处/中心
-                star.radius = Math.random() * 20;
+                star.radius = Math.random() * 40; // 在奇点附近出生
                 star.angle = Math.random() * Math.PI * 2;
                 star.z = w;
                 isWrapped = true;
@@ -252,7 +274,6 @@
             const nx = cx + (Math.cos(star.angle) * star.radius / star.z) * w;
             const ny = cy + (Math.sin(star.angle) * star.radius / star.z) * w;
 
-            // 只有在未发生跃迁越界时才绘制轨迹连线
             if (!isWrapped) {
               ctx.beginPath();
               ctx.moveTo(px, py);
@@ -261,17 +282,16 @@
               const depthAlpha = Math.max(0, 1 - star.z / w);
               
               if (isGodMode) {
-                const hue = (time * 4 + star.randomOffset * 360) % 360;
-                ctx.strokeStyle = `hsla(${hue}, 100%, 70%, ${depthAlpha})`;
-                ctx.lineWidth = depthAlpha * 5 + 1;
+                const hue = (time * 2 + star.randomOffset * 360) % 360;
+                ctx.strokeStyle = `hsla(${hue}, 100%, 75%, ${depthAlpha})`;
+                ctx.lineWidth = depthAlpha * 4 + 1;
               } else {
-                const hue = 180 + star.randomOffset * 80; 
-                ctx.strokeStyle = `hsla(${hue}, 100%, 65%, ${depthAlpha * 0.8})`;
-                ctx.lineWidth = depthAlpha * 2.5 + 0.5;
+                const hue = 190 + star.randomOffset * 60; 
+                ctx.strokeStyle = `hsla(${hue}, 100%, 65%, ${depthAlpha * 0.6})`;
+                ctx.lineWidth = depthAlpha * 2 + 0.5;
               }
               ctx.stroke();
             } else {
-              // 更新越界后的 prev 数据，防止下一帧拉长线
               star.prevAngle = star.angle;
               star.prevRadius = star.radius;
               star.prevZ = star.z;
@@ -302,17 +322,9 @@
       const [showBgSettings, setShowBgSettings] = useState(false);
 
       useEffect(() => {
-        // 生命周期的安全绑定，确保 HLJS 能获取 DOM 并挂载样式 class
-        if (contentRef.current) {
-          if (window.hljs) {
-            contentRef.current.querySelectorAll('pre code').forEach((block) => {
-              delete block.dataset.highlighted; 
-              window.hljs.highlightElement(block);
-            });
-          }
-          if (window.MathJax && window.MathJax.typesetPromise) { 
-            window.MathJax.typesetPromise([contentRef.current]).catch((err) => console.log(err)); 
-          }
+        // 由于 Marked.js 已在解析时底层绑定高亮，这里只需处理 MathJax 数学公式
+        if (contentRef.current && window.MathJax && window.MathJax.typesetPromise) { 
+          window.MathJax.typesetPromise([contentRef.current]).catch((err) => console.log(err)); 
         }
       }, [problem]);
 
@@ -379,7 +391,9 @@
               <div className="border-b border-slate-700/60 pb-6 mb-8">
                 <div className="flex items-center gap-3 mb-4 font-sci-fi">
                   <span className="px-3 py-1 bg-cyan-950 text-cyan-400 font-bold text-sm border border-cyan-800">{problem.platform}</span>
-                  <span className="text-slate-500 text-sm ml-auto tracking-widest">{problem.date}</span>
+                  <span className="text-slate-500 text-sm ml-auto tracking-widest flex items-center gap-1">
+                    <Clock size={12}/> {problem.date} {problem.timestamp || ''}
+                  </span>
                 </div>
                 <h1 className="text-3xl md:text-5xl font-sci-fi font-black text-white leading-tight mb-4 tracking-wide">{problem.title}</h1>
                 <div className="flex flex-wrap gap-2">
@@ -411,6 +425,11 @@
         return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`;
       };
 
+      const getCurrentTimeStr = () => {
+        const d = new Date();
+        return `${String(d.getHours()).padStart(2, '0')}:${String(d.getMinutes()).padStart(2, '0')}:${String(d.getSeconds()).padStart(2, '0')}`;
+      };
+
       const [problems, setProblems] = useState(() => {
         try {
           const savedData = localStorage.getItem('acmer_data_v6');
@@ -433,13 +452,14 @@
 
       const todayCount = problems.filter(p => p.date === getTodayStr()).length;
       
-      const [isGodMode, setIsGodMode] = useState(todayCount >= 5);
+      // 量子飞升门槛提升至 10 题
+      const [isGodMode, setIsGodMode] = useState(todayCount >= 10);
       const [flashEffect, setFlashEffect] = useState(false);
       const prevCountRef = useRef(todayCount);
 
       useEffect(() => {
-        setIsGodMode(todayCount >= 5);
-        if (prevCountRef.current < 5 && todayCount >= 5) {
+        setIsGodMode(todayCount >= 10);
+        if (prevCountRef.current < 10 && todayCount >= 10) {
           setFlashEffect(true);
           setTimeout(() => setFlashEffect(false), 1500);
         }
@@ -450,8 +470,12 @@
         e.preventDefault();
         if (!newTitle.trim()) return;
         const newProblem = {
-          id: Date.now(), title: newTitle, platform: newPlatform,
-          date: getTodayStr(), difficulty: newDifficulty,
+          id: Date.now(), 
+          title: newTitle, 
+          platform: newPlatform,
+          date: getTodayStr(), 
+          timestamp: getCurrentTimeStr(), // 新增精准时间戳
+          difficulty: newDifficulty,
           tags: newTags.split(',').map(t => t.trim()).filter(t => t !== ''),
           markdown: markdownContent 
         };
@@ -477,8 +501,8 @@
 
       const getStatusEffect = (count) => {
         if (count === 0) return { label: 'SYSTEM SLEEPING', color: 'text-slate-500', glow: '' };
-        if (count <= 2) return { label: 'ENGINE IGNITION', color: 'text-cyan-400', glow: 'shadow-[0_0_30px_rgba(6,182,212,0.15)]' };
-        if (count <= 4) return { label: 'UNSTOPPABLE', color: 'text-blue-400', glow: 'shadow-[0_0_40px_rgba(59,130,246,0.3)]' };
+        if (count <= 3) return { label: 'ENGINE IGNITION', color: 'text-cyan-400', glow: 'shadow-[0_0_30px_rgba(6,182,212,0.15)]' };
+        if (count <= 9) return { label: 'UNSTOPPABLE', color: 'text-blue-400', glow: 'shadow-[0_0_40px_rgba(59,130,246,0.3)]' };
         return { 
           label: 'QUANTUM ASCENDED // 量子飞升', 
           color: 'text-transparent bg-clip-text bg-gradient-to-r from-fuchsia-400 via-cyan-400 to-yellow-400 animate-pulse font-black', 
@@ -520,7 +544,7 @@
                   <h1 className="text-2xl md:text-3xl font-sci-fi font-black text-white tracking-widest uppercase">
                     ACMer <span className={isGodMode ? 'text-fuchsia-400 drop-shadow-[0_0_10px_#d946ef]' : 'text-cyan-400'}>NEXUS</span>
                   </h1>
-                  <p className="text-slate-500 text-xs font-mono tracking-widest mt-1">v4.1 // HUD_ONLINE</p>
+                  <p className="text-slate-500 text-xs font-mono tracking-widest mt-1">v5.0 // QUANTUM_LEAP</p>
                 </div>
               </div>
               <div className="text-right hidden md:block relative z-10">
@@ -553,12 +577,12 @@
                 <div className="w-full md:w-[400px] flex flex-col gap-2">
                   <div className="flex justify-between text-xs font-sci-fi font-bold tracking-widest text-slate-400 uppercase">
                     <span>Energy Power</span>
-                    <span className={isGodMode ? 'text-fuchsia-400' : 'text-cyan-400'}>Target: 5</span>
+                    <span className={isGodMode ? 'text-fuchsia-400' : 'text-cyan-400'}>Target: 10</span>
                   </div>
                   <div className="w-full h-8 hud-inner-glass border border-slate-700 p-1" style={{ transform: 'skewX(-15deg)' }}>
                     <div 
                       className={`h-full transition-all duration-1000 ease-out energy-bar-stripes ${isGodMode ? 'bg-ascended-flow shadow-[0_0_25px_#d946ef]' : 'bg-gradient-to-r from-cyan-800 to-cyan-400 shadow-[0_0_15px_#06b6d4]'}`}
-                      style={{ width: `${Math.min((todayCount / 5) * 100, 100)}%` }}
+                      style={{ width: `${Math.min((todayCount / 10) * 100, 100)}%` }}
                     ></div>
                   </div>
                 </div>
@@ -587,14 +611,19 @@
                   {filteredProblems.map(problem => (
                     <div key={problem.id} className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 p-4 hud-inner-glass hover:bg-cyan-500/10 border border-slate-700/30 hover:border-cyan-400/50 transition-all group">
                       
-                      <div className="flex items-center gap-5">
-                        <div className="text-cyan-400 border border-cyan-800 bg-black/50 font-sci-fi font-bold px-3 py-1 text-sm tracking-widest uppercase" style={{ transform: 'skewX(-10deg)' }}>
+                      <div className="flex items-center gap-5 w-full sm:w-auto">
+                        <div className="text-cyan-400 border border-cyan-800 bg-black/50 font-sci-fi font-bold px-3 py-1 text-sm tracking-widest uppercase shrink-0" style={{ transform: 'skewX(-10deg)' }}>
                           <span style={{ display: 'inline-block', transform: 'skewX(10deg)' }}>{problem.platform}</span>
                         </div>
-                        <div className="flex flex-col gap-1">
-                          <span className="font-bold text-slate-100 text-lg group-hover:text-cyan-400 transition-colors font-sci-fi tracking-wide">
-                            {problem.title}
-                          </span>
+                        <div className="flex flex-col gap-1 w-full overflow-hidden">
+                          <div className="flex items-center justify-between sm:justify-start gap-4">
+                            <span className="font-bold text-slate-100 text-lg group-hover:text-cyan-400 transition-colors font-sci-fi tracking-wide truncate">
+                              {problem.title}
+                            </span>
+                            <span className="text-xs font-mono text-slate-500 shrink-0 flex items-center gap-1">
+                              <Clock size={10} className="hidden sm:inline-block"/> {problem.timestamp || ''}
+                            </span>
+                          </div>
                           <div className="flex gap-2">
                             {problem.tags && problem.tags.slice(0,3).map((tag, idx) => (
                               <span key={idx} className="text-xs text-cyan-500/80 font-mono">#{tag}</span>
