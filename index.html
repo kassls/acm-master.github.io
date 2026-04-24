@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>青云白霓 v5.0</title>
+  <title>青云白霓 v5.1</title>
   
   <!-- 稳定 CDN 节点，防国内屏蔽 -->
   <script src="https://cdn.tailwindcss.com"></script>
@@ -120,7 +120,7 @@
       box-shadow: 0 8px 32px 0 rgba(0, 0, 0, 0.5);
     }
 
-    /* === Markdown 极客渲染体系 (已彻底修复 C++ 语法高亮) === */
+    /* === Markdown 极客渲染体系 === */
     .md-prose { color: #e2e8f0; font-size: 1.05rem; line-height: 1.8; word-break: break-word; }
     .md-prose h1, .md-prose h2, .md-prose h3 { color: #ffffff; font-family: 'Rajdhani', sans-serif; font-weight: 700; margin-top: 1.5em; margin-bottom: 0.5em; letter-spacing: 0.5px; }
     .md-prose h1 { font-size: 2.25rem; border-bottom: 2px solid rgba(6, 182, 212, 0.4); padding-bottom: 0.3em; }
@@ -148,13 +148,13 @@
       margin: 1.5em 0; 
     }
     
-    /* 允许 Highlight.js 内置语法颜色透传 */
+    /* 核心修复：清除一切强制颜色覆盖，完全允许 Highlight.js 内置语法颜色透传 */
     .md-prose pre code.hljs { 
       background: transparent !important; 
       padding: 0 !important; 
       font-family: 'Fira Code', monospace; 
       font-size: 0.9em; 
-      color: #f8f8f2; /* Dracula 基础文字颜色 */
+      /* 注意这里去掉了强制 color，由 dracula 样式完全接管 C++ 的多色高亮 */
     }
     
     .md-prose blockquote { 
@@ -174,11 +174,12 @@
       Plus, FileText, Upload, ArrowLeft, TerminalSquare, Trash2, Target, Zap, Clock
     } from 'https://esm.sh/lucide-react@0.263.1';
 
-    // 核心修复：直接将 Highlight.js 编译逻辑注入 Marked 底层，杜绝 React 生命周期干涉导致的渲染失效
+    // 核心修复：为 Marked 补充 langPrefix 配置，确保 dracula.css 能精准识别语言类名
     if (typeof marked !== 'undefined' && window.hljs) {
       marked.setOptions({
         breaks: true,
         gfm: true,
+        langPrefix: 'hljs language-', // 关键修复：让解析后的 code 标签携带正确的类名
         highlight: function (code, lang) {
           if (lang && window.hljs.getLanguage(lang)) {
             return window.hljs.highlight(code, { language: lang }).value;
@@ -189,7 +190,7 @@
     }
 
     // ==========================================
-    // 3D 粒子双态引擎 v5.0：宏伟星云漩涡 & 绝对时空隧道
+    // 3D 粒子双态引擎 v5.1：光流虫洞 & 余烬漩涡
     // ==========================================
     const ParticleEngine = ({ isGodMode, burstTrigger }) => {
       const canvasRef = useRef(null);
@@ -200,11 +201,10 @@
         let w = canvas.width = window.innerWidth;
         let h = canvas.height = window.innerHeight;
 
-        // 粒子数暴增至 6000 颗，确保宏大的体积感
         const numStars = 6000;
         const stars = Array.from({ length: numStars }, () => ({
           angle: Math.random() * Math.PI * 2,
-          radius: Math.random() * w, // 漩涡出生点
+          radius: Math.random() * w,
           z: Math.random() * w,
           randomOffset: Math.random(),
           prevAngle: 0, prevRadius: 0, prevZ: 0
@@ -220,49 +220,50 @@
           time++;
           if (burstMultiplier > 1) burstMultiplier *= 0.95;
 
-          ctx.fillStyle = `rgba(3, 5, 8, ${0.35 / burstMultiplier})`;
+          // 核心修复：大幅降低清除的 Alpha 值，制造极长的残影光轨拖尾，呈现真实的虫洞穿梭感
+          const clearAlpha = isGodMode ? 0.1 : 0.35;
+          ctx.fillStyle = `rgba(3, 5, 8, ${clearAlpha / burstMultiplier})`;
           ctx.fillRect(0, 0, w, h);
 
           const cx = w / 2;
           const cy = h / 2;
           ctx.globalCompositeOperation = 'lighter';
 
-          // 计算隧道的动态呼吸半径 (Base + Sin 波动)
-          const tunnelBreathingOffset = Math.sin(time * 0.015) * (w * 0.08);
-          const tunnelBaseRadius = w * 0.3 + tunnelBreathingOffset;
+          // 微调隧道的呼吸感，避免过度晃眼
+          const tunnelBreathingOffset = Math.sin(time * 0.005) * (w * 0.02);
+          const tunnelBaseRadius = w * 0.25 + tunnelBreathingOffset;
 
           stars.forEach(star => {
-            star.prevAngle = star.angle;
-            star.prevRadius = star.radius;
-            star.prevZ = star.z;
-
             let isWrapped = false;
 
             if (isGodMode) {
-              // 【状态：绝对隧道】
-              // 强制约束到圆柱体表面 (加上极微小的 randomOffset 作为墙壁厚度)
+              // 【状态：平滑虫洞隧道 (>=10)】
               star.radius = tunnelBaseRadius + (star.randomOffset - 0.5) * 30;
               
-              // 速度大幅度放慢，形成漫游感
+              // 降速：缓慢穿梭感
               star.z -= (8 + star.randomOffset * 4) * burstMultiplier;
-              star.angle += 0.003; // 整个粒子墙缓慢旋转
+              star.angle += 0.001; // 极缓慢的圆柱体自转
               
-              // 无缝衔接首尾
+              // 彻底无缝衔接防拉丝
               if (star.z < 1) {
                 star.z += w;
                 isWrapped = true;
               }
             } else {
-              // 【状态：宏伟星云漩涡】
-              // 从中心向外螺旋发散，越靠中心角速度越快
+              // 【状态：深空余烬漩涡 (<10)】
               const distRatio = Math.max(0.1, star.radius / (w * 0.5));
-              star.angle += 0.015 / distRatio; // 漩涡差速旋转核心逻辑
-              star.radius += 2 + distRatio * 2; // 向外螺旋膨胀
-              star.z -= 1.5; // 轻微向摄像机移动
+              // 转速大幅度放缓
+              star.angle -= 0.001 / distRatio; 
+              // 向外缓慢膨胀
+              star.radius += 0.5 + distRatio * 0.5; 
+              star.z -= 0.5; 
               
-              // 逃逸后在中心深渊重生
-              if (star.radius > w * 1.5 || star.z < 1) {
-                star.radius = Math.random() * 40; // 在奇点附近出生
+              // 核心机制：计算衰减透明度（靠近中心为1，向外逐渐归零）
+              const fadeAlpha = Math.max(0, 1 - (star.radius / (w * 0.6)));
+
+              // 越界或完全透明后，在深渊奇点重生
+              if (star.radius > w * 0.6 || star.z < 1 || fadeAlpha <= 0) {
+                star.radius = Math.random() * 10; // 诞生在绝对中心
                 star.angle = Math.random() * Math.PI * 2;
                 star.z = w;
                 isWrapped = true;
@@ -274,28 +275,32 @@
             const nx = cx + (Math.cos(star.angle) * star.radius / star.z) * w;
             const ny = cy + (Math.sin(star.angle) * star.radius / star.z) * w;
 
-            if (!isWrapped) {
+            // 完美规避闪烁与卡顿线条：只有在未发生跃迁，且 prevZ 有效时，才绘制运动连线
+            if (!isWrapped && star.prevZ > 1) {
               ctx.beginPath();
               ctx.moveTo(px, py);
               ctx.lineTo(nx, ny);
 
-              const depthAlpha = Math.max(0, 1 - star.z / w);
-              
               if (isGodMode) {
-                const hue = (time * 2 + star.randomOffset * 360) % 360;
+                const depthAlpha = Math.max(0, 1 - star.z / w);
+                const hue = (time + star.randomOffset * 360) % 360;
                 ctx.strokeStyle = `hsla(${hue}, 100%, 75%, ${depthAlpha})`;
-                ctx.lineWidth = depthAlpha * 4 + 1;
+                ctx.lineWidth = depthAlpha * 3 + 1;
               } else {
+                // 漩涡模式加上特有的渐隐 Fade Alpha
+                const depthAlpha = Math.max(0, 1 - star.z / w);
+                const fadeAlpha = Math.max(0, 1 - (star.radius / (w * 0.6)));
                 const hue = 190 + star.randomOffset * 60; 
-                ctx.strokeStyle = `hsla(${hue}, 100%, 65%, ${depthAlpha * 0.6})`;
-                ctx.lineWidth = depthAlpha * 2 + 0.5;
+                ctx.strokeStyle = `hsla(${hue}, 100%, 65%, ${depthAlpha * fadeAlpha * 0.8})`;
+                ctx.lineWidth = depthAlpha * fadeAlpha * 2 + 0.5;
               }
               ctx.stroke();
-            } else {
-              star.prevAngle = star.angle;
-              star.prevRadius = star.radius;
-              star.prevZ = star.z;
             }
+
+            // 在一帧结束的最后，同步历史状态，确保下一帧路径无缝相连
+            star.prevAngle = star.angle;
+            star.prevRadius = star.radius;
+            star.prevZ = star.z;
           });
 
           ctx.globalCompositeOperation = 'source-over';
@@ -322,7 +327,6 @@
       const [showBgSettings, setShowBgSettings] = useState(false);
 
       useEffect(() => {
-        // 由于 Marked.js 已在解析时底层绑定高亮，这里只需处理 MathJax 数学公式
         if (contentRef.current && window.MathJax && window.MathJax.typesetPromise) { 
           window.MathJax.typesetPromise([contentRef.current]).catch((err) => console.log(err)); 
         }
@@ -452,7 +456,6 @@
 
       const todayCount = problems.filter(p => p.date === getTodayStr()).length;
       
-      // 量子飞升门槛提升至 10 题
       const [isGodMode, setIsGodMode] = useState(todayCount >= 10);
       const [flashEffect, setFlashEffect] = useState(false);
       const prevCountRef = useRef(todayCount);
@@ -474,7 +477,7 @@
           title: newTitle, 
           platform: newPlatform,
           date: getTodayStr(), 
-          timestamp: getCurrentTimeStr(), // 新增精准时间戳
+          timestamp: getCurrentTimeStr(),
           difficulty: newDifficulty,
           tags: newTags.split(',').map(t => t.trim()).filter(t => t !== ''),
           markdown: markdownContent 
@@ -544,7 +547,7 @@
                   <h1 className="text-2xl md:text-3xl font-sci-fi font-black text-white tracking-widest uppercase">
                     ACMer <span className={isGodMode ? 'text-fuchsia-400 drop-shadow-[0_0_10px_#d946ef]' : 'text-cyan-400'}>NEXUS</span>
                   </h1>
-                  <p className="text-slate-500 text-xs font-mono tracking-widest mt-1">v5.0 // QUANTUM_LEAP</p>
+                  <p className="text-slate-500 text-xs font-mono tracking-widest mt-1">v5.1 // WORMHOLE_EDITION</p>
                 </div>
               </div>
               <div className="text-right hidden md:block relative z-10">
