@@ -3,20 +3,17 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>ACMer 核心控制台 - 飞龙在天版</title>
+  <title>ACMer 核心控制台 - 纯粹极客版</title>
   
   <script src="https://cdn.tailwindcss.com"></script>
   <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
-  <script src="https://cdn.jsdelivr.net/npm/marked/marked.min.js"></script>
   
+  <!-- Marked & Highlight.js 完美组合 -->
+  <script src="https://cdn.jsdelivr.net/npm/marked/marked.min.js"></script>
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.8.0/styles/dracula.min.css">
   <script src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.8.0/highlight.min.js"></script>
 
-  <!-- 引入 three.js 用于飞龙特效 -->
-  <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r134/three.min.js"></script>
-  <!-- 引入 GLTFLoader 用于加载龙的模型 -->
-  <script src="https://cdn.jsdelivr.net/npm/three@0.134.0/examples/js/loaders/GLTFLoader.js"></script>
-
+  <!-- MathJax -->
   <script>
     MathJax = {
       tex: { inlineMath: [['$', '$'], ['\\(', '\\)']], displayMath: [['$$', '$$'], ['\\[', '\\]']] },
@@ -28,14 +25,13 @@
   <style>
     @import url('https://fonts.googleapis.com/css2?family=Rajdhani:wght@500;700;900&family=Fira+Code:wght@400;600&display=swap');
 
-    /* === 基础与滚动条 === */
     ::-webkit-scrollbar { width: 6px; height: 6px; }
-    ::-webkit-scrollbar-track { background: rgba(0, 0, 0, 0.8); }
-    ::-webkit-scrollbar-thumb { background: rgba(6, 182, 212, 0.8); border-radius: 0px; }
+    ::-webkit-scrollbar-track { background: rgba(0, 0, 0, 0.4); }
+    ::-webkit-scrollbar-thumb { background: rgba(6, 182, 212, 0.6); border-radius: 0px; }
     ::-webkit-scrollbar-thumb:hover { background: rgba(217, 70, 239, 1); }
     .font-sci-fi { font-family: 'Rajdhani', sans-serif; }
 
-    /* === 瞬间爆发特效动画 (飞升版) === */
+    /* === 破茧爆发爆闪 === */
     @keyframes screen-flash {
       0% { opacity: 1; background: #ffffff; }
       10% { opacity: 0.8; background: #d946ef; } 
@@ -45,7 +41,7 @@
       0% { transform: scale(0); opacity: 1; border-width: 60px; border-color: rgba(217, 70, 239, 1); }
       100% { transform: scale(15); opacity: 0; border-width: 0px; border-color: rgba(6, 182, 212, 0.5); }
     }
-    .animate-flash { animation: screen-flash 1.5s cubic-bezier(0.16, 1, 0.3, 1) forwards; }
+    .animate-flash { animation: screen-flash 1s cubic-bezier(0.16, 1, 0.3, 1) forwards; }
     .animate-shockwave {
       position: fixed; top: 50%; left: 50%;
       width: 20vw; height: 20vw; margin-top: -10vw; margin-left: -10vw;
@@ -53,20 +49,27 @@
       animation: shockwave-expand 1.2s cubic-bezier(0.1, 0.8, 0.3, 1) forwards;
     }
 
-    /* === HUD 面板样式 === */
+    /* === 极致通透毛玻璃 HUD 面板 === */
     .hud-panel {
-      background: linear-gradient(135deg, rgba(15, 20, 30, 0.8) 0%, rgba(5, 10, 15, 0.95) 100%);
-      backdrop-filter: blur(10px);
-      border: 1px solid rgba(6, 182, 212, 0.3);
+      background: rgba(10, 15, 25, 0.35); /* 高度透明，透出背后星云 */
+      backdrop-filter: blur(16px) saturate(150%);
+      -webkit-backdrop-filter: blur(16px) saturate(150%);
+      border: 1px solid rgba(6, 182, 212, 0.25);
       position: relative;
     }
     .hud-clip { clip-path: polygon(0 0, calc(100% - 20px) 0, 100% 20px, 100% 100%, 20px 100%, 0 calc(100% - 20px)); }
     .hud-clip-ascended {
-      border-color: rgba(217, 70, 239, 0.6);
-      box-shadow: 0 0 40px rgba(217, 70, 239, 0.3) inset;
+      border-color: rgba(217, 70, 239, 0.5);
+      box-shadow: 0 0 30px rgba(217, 70, 239, 0.2) inset;
     }
 
-    /* === 能量槽与动态流光 === */
+    /* 面板内的输入框和卡片进一步毛玻璃化 */
+    .hud-inner-glass {
+      background: rgba(0, 0, 0, 0.3);
+      backdrop-filter: blur(8px);
+    }
+
+    /* === 能量槽动态流光 === */
     @keyframes progress-stripes {
       0% { background-position: 0 0; }
       100% { background-position: 40px 0; }
@@ -81,7 +84,6 @@
       background-size: 40px 40px;
       animation: progress-stripes 1s linear infinite;
     }
-    /* 飞升形态专属多色动态渐变条 */
     .bg-ascended-flow {
       background: linear-gradient(90deg, #d946ef, #8b5cf6, #06b6d4, #f59e0b, #d946ef);
       background-size: 300% 100%;
@@ -90,28 +92,26 @@
 
     .scanlines {
       background: linear-gradient(to bottom, rgba(255,255,255,0), rgba(255,255,255,0) 50%, rgba(0,0,0,0.15) 50%, rgba(0,0,0,0.15));
-      background-size: 100% 4px; position: absolute; inset: 0; pointer-events: none; opacity: 0.4;
+      background-size: 100% 4px; position: absolute; inset: 0; pointer-events: none; opacity: 0.3;
     }
 
-    /* === 专属阅读舱与 MD 排版 (修复代码高亮版) === */
     .reader-glass {
-      background: rgba(10, 15, 25, 0.5);
-      backdrop-filter: blur(30px) saturate(200%);
-      -webkit-backdrop-filter: blur(30px) saturate(200%);
+      background: rgba(10, 15, 25, 0.4);
+      backdrop-filter: blur(25px) saturate(180%);
+      -webkit-backdrop-filter: blur(25px) saturate(180%);
       border: 1px solid rgba(255, 255, 255, 0.1);
-      box-shadow: 0 10px 50px 0 rgba(0, 0, 0, 0.6);
+      box-shadow: 0 8px 32px 0 rgba(0, 0, 0, 0.5);
     }
 
+    /* === 彻底修复的 MD 代码渲染 === */
     .md-prose { color: #e2e8f0; font-size: 1.05rem; line-height: 1.8; word-break: break-word; }
-    .md-prose h1, .md-prose h2, .md-prose h3, .md-prose h4 { color: #ffffff; font-family: 'Rajdhani', sans-serif; font-weight: 700; margin-top: 1.8em; margin-bottom: 0.8em; letter-spacing: 0.5px; }
+    .md-prose h1, .md-prose h2, .md-prose h3 { color: #ffffff; font-family: 'Rajdhani', sans-serif; font-weight: 700; margin-top: 1.5em; margin-bottom: 0.5em; letter-spacing: 0.5px; }
     .md-prose h1 { font-size: 2.25rem; border-bottom: 2px solid rgba(6, 182, 212, 0.4); padding-bottom: 0.3em; }
     .md-prose h2 { font-size: 1.75rem; border-bottom: 1px solid rgba(255, 255, 255, 0.1); padding-bottom: 0.3em; }
     .md-prose h3 { font-size: 1.35rem; color: #67e8f9; }
-    .md-prose p { margin-bottom: 1.2em; }
-    .md-prose ul { list-style-type: disc; padding-left: 1.5em; margin-bottom: 1.2em; color: #cbd5e1; }
-    .md-prose ol { list-style-type: decimal; padding-left: 1.5em; margin-bottom: 1.2em; color: #cbd5e1; }
-    .md-prose li { margin-bottom: 0.4em; }
-    .md-prose strong { color: #f8fafc; font-weight: 700; }
+    .md-prose p, .md-prose li { margin-bottom: 1em; color: #cbd5e1; }
+    .md-prose ul { list-style-type: disc; padding-left: 1.5em; }
+    .md-prose ol { list-style-type: decimal; padding-left: 1.5em; }
     
     /* 单独的行内代码高亮 (微透粉色) */
     .md-prose code:not(pre code) { 
@@ -119,24 +119,23 @@
       padding: 0.2em 0.4em; border-radius: 4px; font-size: 0.9em; 
     }
     
-    /* 核心修复：给大段代码块提供暗黑背景，并允许 Highlight.js 控制文字颜色 */
+    /* 大代码块背景 (保留 Dracula 背景色) */
     .md-prose pre { 
-      background: #282a36 !important; /* Dracula 的标准背景色 */
+      background: #282a36 !important; 
       padding: 1.2em !important; border-radius: 8px; overflow-x: auto; 
-      margin: 1.5em 0; border: 1px solid rgba(255,255,255,0.1); box-shadow: 0 4px 6px rgba(0,0,0,0.3); 
+      margin: 1.5em 0; border: 1px solid rgba(255,255,255,0.1); box-shadow: 0 4px 6px rgba(0,0,0,0.5); 
     }
+    
+    /* 核心修复：移除颜色强制覆盖，让 HLJS 自己着色 */
     .md-prose pre code { 
       background: transparent !important; padding: 0 !important; 
       font-family: 'Fira Code', monospace; font-size: 0.9em; 
     }
     
     .md-prose blockquote { 
-      border-left: 4px solid #d946ef; background: linear-gradient(90deg, rgba(217,70,239,0.1) 0%, transparent 100%);
+      border-left: 4px solid #06b6d4; background: linear-gradient(90deg, rgba(6,182,212,0.1) 0%, transparent 100%);
       padding: 1em 1.5em; margin: 1.5em 0; color: #94a3b8; font-style: italic; border-radius: 0 8px 8px 0;
     }
-    .md-prose a { color: #38bdf8; text-decoration: none; border-bottom: 1px solid transparent; transition: all 0.3s; }
-    .md-prose a:hover { color: #7dd3fc; border-bottom: 1px solid #7dd3fc; text-shadow: 0 0 8px rgba(56, 189, 248, 0.5); }
-    .md-prose img { max-width: 100%; border-radius: 8px; border: 1px solid rgba(255,255,255,0.1); margin: 1.5em 0; }
   </style>
 </head>
 <body class="bg-[#030305] text-slate-200 overflow-x-hidden selection:bg-fuchsia-500/30">
@@ -150,290 +149,114 @@
       Plus, FileText, Upload, ArrowLeft, TerminalSquare, Trash2, Target, Zap
     } from 'https://esm.sh/lucide-react@0.263.1';
 
-    // 核心修复：配置 Marked 在解析时同步调用 Highlight.js，确保代码完美着色
-    marked.setOptions({
-      breaks: true, 
-      gfm: true,
-      highlight: function (code, lang) {
-        if (lang && hljs.getLanguage(lang)) {
-          try { return hljs.highlight(code, { language: lang }).value; } catch (__) {}
-        }
-        return hljs.highlightAuto(code).value;
-      },
-      langPrefix: 'hljs language-' // 必需，赋予代码块特定的 CSS class 前缀
-    });
+    // 配置 Marked 语法解析
+    marked.setOptions({ breaks: true, gfm: true });
 
     // ==========================================
-    // 全新双形态引擎：星云漩涡 (低功耗) + 飞龙在天 (高功耗 3D)
+    // 纯粹 2D 粒子引擎：浩瀚星云与光速虫洞
     // ==========================================
-    const DualEngineBackground = ({ isGodMode, burstTrigger }) => {
+    const ParticleEngine = ({ isGodMode, burstTrigger }) => {
       const canvasRef = useRef(null);
-      const threeContainerRef = useRef(null);
-      const rendererRef = useRef(null);
-      const sceneRef = useRef(null);
-      const cameraRef = useRef(null);
-      const dragonRef = useRef(null);
-      const mixerRef = useRef(null);
-      const clockRef = useRef(new THREE.Clock());
-      const cloudsRef = useRef([]);
 
-      // ====================
-      // 形态一：星云漩涡 (Canvas 2D) - < 5 题
-      // ====================
       useEffect(() => {
-        if (isGodMode) return; // 如果是超神模式，不启动这个 2D 引擎
-
         const canvas = canvasRef.current;
         const ctx = canvas.getContext('2d', { alpha: false });
-        let width = canvas.width = window.innerWidth;
-        let height = canvas.height = window.innerHeight;
+        let w = canvas.width = window.innerWidth;
+        let h = canvas.height = window.innerHeight;
 
         const particles = [];
-        const particleCount = 800; // 显著增加粒子数量
+        const particleCount = 2000; // 粒子数量暴增至 2000 颗！
 
-        class Particle {
-          constructor() {
-            this.reset();
-            this.angle = Math.random() * Math.PI * 2;
-            this.radius = Math.random() * (width > height ? width : height);
-          }
-          reset() {
-            this.angle = Math.random() * Math.PI * 2;
-            this.radius = Math.random() * 60; // 稍微增大核心区域
-            this.speed = (Math.random() * 1.5 + 0.5);
-            this.size = Math.random() * 2 + 0.5;
-            this.colorOffset = Math.random() * 360;
-          }
-          update() {
-            // 平稳涡流，速度稍慢，显得更宏大
-            this.angle += 0.003;
-            this.radius += this.speed * 0.4;
-            
-            this.x = width / 2 + Math.cos(this.angle) * this.radius;
-            this.y = height / 2 + Math.sin(this.angle) * this.radius;
-
-            if (this.radius > (width > height ? width : height)) this.reset();
-          }
-          draw(ctx, time) {
-            ctx.beginPath();
-            ctx.arc(this.x, this.y, this.size, 0, Math.PI * 2);
-            
-            const alpha = Math.max(0, 1 - (this.radius / (width * 0.7))); // 增大透明度衰减半径
-            
-            // 赛博青 + 一点点紫色偏色
-            const hue = (190 + this.colorOffset * 0.1 + time * 0.1) % 360;
-            ctx.fillStyle = `hsla(${hue}, 100%, 60%, ${alpha})`;
-            // 移除 shadowBlur 以提升性能，粒子够多就有效果了
-            ctx.fill();
-          }
+        for (let i = 0; i < particleCount; i++) {
+          particles.push({
+            angle: Math.random() * Math.PI * 2,
+            radius: Math.random() * w, // 遍布全屏
+            speed: Math.random() * 2 + 0.1,
+            size: Math.random() * 2 + 0.5,
+            colorOffset: Math.random() * 360,
+          });
         }
 
-        for (let i = 0; i < particleCount; i++) particles.push(new Particle());
-
         let animationId;
-        let globalTime = 0;
+        let time = 0;
+        let burstMultiplier = 1;
 
         const animate = () => {
-          globalTime += 1;
-          ctx.fillStyle = 'rgba(2, 5, 10, 0.3)'; // 拖尾效果
-          ctx.fillRect(0, 0, width, height);
+          time++;
+          if (burstMultiplier > 1) burstMultiplier *= 0.95; // 爆发后衰减
 
-          // 核心发光
-          const coreRadius = 120 + Math.sin(globalTime*0.05)*30; // 增大核心
-          const gradient = ctx.createRadialGradient(width/2, height/2, 0, width/2, height/2, coreRadius * 3);
-          gradient.addColorStop(0, 'rgba(6, 182, 212, 0.15)');
-          gradient.addColorStop(1, 'transparent');
+          // 残影底色
+          ctx.fillStyle = isGodMode 
+            ? `rgba(5, 5, 10, ${0.15 / burstMultiplier})` 
+            : 'rgba(2, 5, 10, 0.3)';
+          ctx.fillRect(0, 0, w, h);
+
+          // 核心光晕
+          const coreRadius = isGodMode ? 100 : 150;
+          const gradient = ctx.createRadialGradient(w/2, h/2, 0, w/2, h/2, coreRadius * 3);
+          if (isGodMode) {
+             const hueShift = (time * 2) % 360;
+             gradient.addColorStop(0, `hsla(${hueShift}, 100%, 50%, ${0.3 * burstMultiplier})`);
+             gradient.addColorStop(1, 'transparent');
+          } else {
+             gradient.addColorStop(0, 'rgba(6, 182, 212, 0.15)');
+             gradient.addColorStop(1, 'transparent');
+          }
           ctx.fillStyle = gradient;
-          ctx.fillRect(0,0,width,height);
+          ctx.fillRect(0, 0, w, h);
 
           ctx.globalCompositeOperation = 'lighter';
-          particles.forEach(p => {
-            p.update();
-            p.draw(ctx, globalTime);
-          });
-          ctx.globalCompositeOperation = 'source-over';
 
+          particles.forEach(p => {
+            if (isGodMode) {
+              // 【>= 5 题】虫洞跃迁：向外极速扩散，产生 3D 穿梭感
+              p.angle += 0.01 * burstMultiplier;
+              p.radius += p.speed * 4 * burstMultiplier;
+              p.size = (p.radius / w) * 4 + 1; // 越近越大
+            } else {
+              // 【< 5 题】浩瀚星云：广阔平稳的巨型漩涡
+              p.angle += 0.002;
+              p.radius += p.speed * 0.4;
+              p.size = 1.5;
+            }
+
+            if (p.radius > Math.max(w, h)) {
+              p.radius = Math.random() * 50; // 重生在核心
+              p.angle = Math.random() * Math.PI * 2;
+            }
+
+            const x = w/2 + Math.cos(p.angle) * p.radius;
+            const y = h/2 + Math.sin(p.angle) * p.radius;
+
+            ctx.beginPath();
+            ctx.arc(x, y, p.size, 0, Math.PI * 2);
+            
+            if (isGodMode) {
+              // 七彩流光粒子
+              const hue = (time * 3 + p.colorOffset) % 360;
+              ctx.fillStyle = `hsla(${hue}, 100%, 65%, ${1 - p.radius/(w*1.5)})`;
+            } else {
+              // 赛博青蓝色星系
+              const hue = 190 + (p.colorOffset % 30);
+              ctx.fillStyle = `hsla(${hue}, 100%, 60%, ${1 - p.radius/w})`;
+            }
+            ctx.fill();
+          });
+
+          ctx.globalCompositeOperation = 'source-over';
           animationId = requestAnimationFrame(animate);
         };
 
         animate();
 
-        const handleResize = () => { width = canvas.width = window.innerWidth; height = canvas.height = window.innerHeight; };
+        if (burstTrigger) burstMultiplier = 8; // 触发全屏爆发
+
+        const handleResize = () => { w = canvas.width = window.innerWidth; h = canvas.height = window.innerHeight; };
         window.addEventListener('resize', handleResize);
         return () => { cancelAnimationFrame(animationId); window.removeEventListener('resize', handleResize); };
-      }, [isGodMode]); // 仅在非 God Mode 下运行
+      }, [isGodMode, burstTrigger]);
 
-      // ====================
-      // 形态二：飞龙在天 (Three.js 3D) - >= 5 题
-      // ====================
-      useEffect(() => {
-        if (!isGodMode) return; // 如果不是超神模式，不启动这个 3D 引擎
-
-        const container = threeContainerRef.current;
-        let width = window.innerWidth;
-        let height = window.innerHeight;
-
-        // 1. 初始化场景、相机、渲染器
-        const scene = new THREE.Scene();
-        sceneRef.current = scene;
-        // 七彩祥云背景色
-        scene.background = new THREE.Color(0x1a1a2e); 
-        scene.fog = new THREE.FogExp2(0x1a1a2e, 0.001);
-
-        const camera = new THREE.PerspectiveCamera(75, width / height, 0.1, 2000);
-        camera.position.set(0, 50, 300);
-        camera.lookAt(0, 0, 0);
-        cameraRef.current = camera;
-
-        const renderer = new THREE.WebGLRenderer({ antialias: true, alpha: true });
-        renderer.setSize(width, height);
-        renderer.setPixelRatio(window.devicePixelRatio);
-        container.appendChild(renderer.domElement);
-        rendererRef.current = renderer;
-
-        // 2. 添加灯光
-        const ambientLight = new THREE.AmbientLight(0xffffff, 0.5);
-        scene.add(ambientLight);
-        const directionalLight = new THREE.DirectionalLight(0xffd700, 1); // 金光
-        directionalLight.position.set(100, 200, 100);
-        scene.add(directionalLight);
-        // 添加一些彩色的点光源来模拟祥云反光
-        const pLight1 = new THREE.PointLight(0x00ffff, 1, 500); pLight1.position.set(200, 100, 0); scene.add(pLight1);
-        const pLight2 = new THREE.PointLight(0xff00ff, 1, 500); pLight2.position.set(-200, 100, 0); scene.add(pLight2);
-
-        // 3. 创建七彩祥云 (用粒子系统模拟)
-        const cloudGeo = new THREE.BufferGeometry();
-        const cloudCount = 2000;
-        const posArray = new Float32Array(cloudCount * 3);
-        const colorArray = new Float32Array(cloudCount * 3);
-        for(let i=0; i<cloudCount*3; i+=3) {
-            posArray[i] = (Math.random()-0.5) * 1000;
-            posArray[i+1] = (Math.random()-0.5) * 200 + 50; // 扁平分布
-            posArray[i+2] = (Math.random()-0.5) * 1000;
-            
-            // 七彩颜色
-            const color = new THREE.Color();
-            color.setHSL(Math.random(), 0.8, 0.6);
-            colorArray[i] = color.r; colorArray[i+1] = color.g; colorArray[i+2] = color.b;
-        }
-        cloudGeo.setAttribute('position', new THREE.BufferAttribute(posArray, 3));
-        cloudGeo.setAttribute('color', new THREE.BufferAttribute(colorArray, 3));
-        // 使用一个简单的圆形贴图来模拟云朵/光晕
-        const sprite = new THREE.TextureLoader().load('https://threejs.org/examples/textures/sprites/disc.png');
-        const cloudMat = new THREE.PointsMaterial({ 
-            size: 30, vertexColors: true, map: sprite, transparent: true, opacity: 0.3, blending: THREE.AdditiveBlending, depthWrite: false
-        });
-        const cloudParticles = new THREE.Points(cloudGeo, cloudMat);
-        scene.add(cloudParticles);
-        cloudsRef.current = cloudParticles;
-
-
-        // 4. 加载飞龙模型 (使用一个开源的低模龙作为占位，实际需要更精细的模型)
-        // 注意：这里使用了一个在线的 GLTF 模型 URL。如果失效，需要替换。
-        const loader = new THREE.GLTFLoader();
-        // 一个简单的东方龙模型 URL (低面数)
-        const dragonModelUrl = 'https://raw.githubusercontent.com/KhronosGroup/glTF-Sample-Models/master/2.0/DragonAttenuation/glTF-Binary/DragonAttenuation.glb';
-        
-        loader.load(dragonModelUrl, (gltf) => {
-            const dragon = gltf.scene;
-            dragon.scale.set(30, 30, 30); // 调整大小
-            dragon.position.set(0, 0, 0);
-            // 给龙添加一个发光的材质
-            dragon.traverse((child) => {
-                if (child.isMesh) {
-                    child.material = new THREE.MeshStandardMaterial({
-                        color: 0xffd700, // 金色
-                        emissive: 0xffaa00, // 发光色
-                        emissiveIntensity: 0.5,
-                        roughness: 0.3,
-                        metalness: 0.8
-                    });
-                }
-            });
-            scene.add(dragon);
-            dragonRef.current = dragon;
-
-            // 如果模型有动画，可以在这里播放 (这个示例模型可能没有飞行动画)
-            // mixerRef.current = new THREE.AnimationMixer(dragon);
-            // const action = mixerRef.current.clipAction(gltf.animations[0]);
-            // action.play();
-        }, undefined, (error) => {
-            console.error('An error happened loading the dragon model:', error);
-        });
-
-
-        // 5. 动画循环
-        let animationId;
-        const animate = () => {
-            animationId = requestAnimationFrame(animate);
-            const delta = clockRef.current.getDelta();
-            const time = clockRef.current.getElapsedTime();
-
-            if (mixerRef.current) mixerRef.current.update(delta);
-
-            // 让龙沿 8 字形轨迹飞行
-            if (dragonRef.current) {
-                const t = time * 0.3;
-                dragonRef.current.position.x = Math.sin(t) * 150;
-                dragonRef.current.position.y = Math.cos(t * 2) * 50 + 50;
-                dragonRef.current.position.z = Math.cos(t) * 150;
-                // 让龙头朝向飞行方向 (简单近似)
-                dragonRef.current.lookAt(
-                    Math.sin(t + 0.1) * 150,
-                    Math.cos((t + 0.1) * 2) * 50 + 50,
-                    Math.cos(t + 0.1) * 150
-                );
-            }
-
-            // 让祥云缓慢流动旋转
-            if (cloudsRef.current) {
-                cloudsRef.current.rotation.y = time * 0.02;
-            }
-
-            renderer.render(scene, camera);
-        };
-        animate();
-
-        const handleResize = () => {
-            width = window.innerWidth; height = window.innerHeight;
-            camera.aspect = width / height;
-            camera.updateProjectionMatrix();
-            renderer.setSize(width, height);
-        };
-        window.addEventListener('resize', handleResize);
-
-        // 清理函数
-        return () => {
-            cancelAnimationFrame(animationId);
-            window.removeEventListener('resize', handleResize);
-            if (rendererRef.current && container) {
-                container.removeChild(rendererRef.current.domElement);
-            }
-            // 释放 Three.js 资源
-            scene.traverse((object) => {
-                if (object.geometry) object.geometry.dispose();
-                if (object.material) {
-                    if (Array.isArray(object.material)) object.material.forEach(m => m.dispose());
-                    else object.material.dispose();
-                }
-            });
-        };
-      }, [isGodMode]); // 仅在 God Mode 下运行
-
-      return (
-        <>
-          {/* 形态一的 Canvas，在非 God Mode 时显示 */}
-          <canvas 
-            ref={canvasRef} 
-            className={`fixed inset-0 z-0 pointer-events-none transition-opacity duration-1000 ${isGodMode ? 'opacity-0' : 'opacity-100'}`} 
-          />
-          {/* 形态二的 Three.js 容器，在 God Mode 时显示 */}
-          <div 
-            ref={threeContainerRef} 
-            className={`fixed inset-0 z-0 pointer-events-none transition-opacity duration-1000 ${isGodMode ? 'opacity-100' : 'opacity-0'}`}
-          />
-        </>
-      );
+      return <canvas ref={canvasRef} className="fixed inset-0 z-0 pointer-events-none mix-blend-screen" />;
     };
 
     // ==========================================
@@ -444,7 +267,12 @@
       const [showBgSettings, setShowBgSettings] = useState(false);
 
       useEffect(() => {
-        // 由于 marked 已经在解析时完成了高亮，这里只需调用 MathJax 渲染公式即可
+        if (contentRef.current) {
+          // 在渲染完成后，找到所有代码块并让 Highlight.js 着色
+          contentRef.current.querySelectorAll('pre code').forEach((block) => {
+            hljs.highlightElement(block);
+          });
+        }
         if (window.MathJax) { window.MathJax.typesetPromise([contentRef.current]).catch((err) => console.log(err)); }
       }, [problem]);
 
@@ -601,8 +429,8 @@
         if (count <= 2) return { label: 'ENGINE IGNITION', color: 'text-cyan-400', glow: 'shadow-[0_0_30px_rgba(6,182,212,0.15)]' };
         if (count <= 4) return { label: 'UNSTOPPABLE', color: 'text-blue-400', glow: 'shadow-[0_0_40px_rgba(59,130,246,0.3)]' };
         return { 
-          label: 'DRAGON ASCENDED // 飞龙在天', 
-          color: 'text-transparent bg-clip-text bg-gradient-to-r from-yellow-300 via-red-500 to-fuchsia-500 animate-pulse font-black', 
+          label: 'QUANTUM ASCENDED // 量子飞升', 
+          color: 'text-transparent bg-clip-text bg-gradient-to-r from-fuchsia-400 via-cyan-400 to-yellow-400 animate-pulse font-black', 
           glow: 'hud-clip-ascended' 
         };
       };
@@ -627,8 +455,8 @@
             </div>
           )}
 
-          {/* 底层双形态引擎 */}
-          <DualEngineBackground isGodMode={isGodMode} burstTrigger={flashEffect} />
+          {/* 性能重构的终极双态引擎 */}
+          <ParticleEngine isGodMode={isGodMode} burstTrigger={flashEffect} />
 
           <div className="max-w-7xl mx-auto space-y-8 relative z-10 p-4 md:p-8">
             
@@ -656,14 +484,14 @@
               <div className="flex flex-col md:flex-row items-center justify-between gap-8 relative z-10">
                 
                 <div className="flex items-center gap-6 w-full md:w-auto">
-                  <div className={`p-6 border-l-4 ${isGodMode ? 'bg-fuchsia-950/30 border-fuchsia-500 shadow-[0_0_40px_rgba(217,70,239,0.4)]' : 'bg-black/50 border-slate-600'}`}>
+                  <div className={`p-6 border-l-4 ${isGodMode ? 'bg-fuchsia-950/30 border-fuchsia-500 shadow-[0_0_40px_rgba(217,70,239,0.4)]' : 'hud-inner-glass border-slate-600'}`}>
                     {isGodMode ? <Flame size={60} className="text-fuchsia-500" /> : <Zap size={60} className={currentStatus.color} />}
                   </div>
                   <div>
                     <p className="text-xs font-mono text-slate-500 mb-1 tracking-widest uppercase flex items-center gap-2">
                       <Target size={14}/> Current Protocol
                     </p>
-                    <h2 className={`text-4xl md:text-6xl font-sci-fi font-black tracking-wider ${currentStatus.color}`} style={{ textShadow: isGodMode ? '0 0 30px rgba(217,70,239,0.6)' : 'none' }}>
+                    <h2 className={`text-4xl md:text-6xl font-sci-fi font-black tracking-wider ${currentStatus.color}`}>
                       {currentStatus.label}
                     </h2>
                     <p className="text-slate-400 mt-2 text-lg font-sci-fi font-bold tracking-widest uppercase">
@@ -677,7 +505,7 @@
                     <span>Energy Power</span>
                     <span className={isGodMode ? 'text-fuchsia-400' : 'text-cyan-400'}>Target: 5</span>
                   </div>
-                  <div className="w-full h-8 bg-black/80 border border-slate-700 p-1" style={{ transform: 'skewX(-15deg)' }}>
+                  <div className="w-full h-8 hud-inner-glass border border-slate-700 p-1" style={{ transform: 'skewX(-15deg)' }}>
                     <div 
                       className={`h-full transition-all duration-1000 ease-out energy-bar-stripes ${isGodMode ? 'bg-ascended-flow shadow-[0_0_25px_#d946ef]' : 'bg-gradient-to-r from-cyan-800 to-cyan-400 shadow-[0_0_15px_#06b6d4]'}`}
                       style={{ width: `${Math.min((todayCount / 5) * 100, 100)}%` }}
@@ -692,7 +520,7 @@
               
               <div className="lg:col-span-2 hud-panel flex flex-col border-t-4 border-t-cyan-500" style={{ maxHeight: '800px' }}>
                 <div className="scanlines"></div>
-                <div className="p-6 border-b border-cyan-500/20 bg-black/40 flex flex-col sm:flex-row sm:items-center justify-between gap-4 relative z-10">
+                <div className="p-6 border-b border-cyan-500/20 hud-inner-glass flex flex-col sm:flex-row sm:items-center justify-between gap-4 relative z-10">
                   <h3 className="font-sci-fi font-black text-white flex items-center gap-3 text-xl tracking-widest uppercase">
                     <CheckCircle2 size={24} className="text-cyan-400" />
                     Data Archive
@@ -700,14 +528,14 @@
                   <div className="relative w-full sm:w-80">
                     <Search className="absolute left-4 top-1/2 -translate-y-1/2 text-cyan-500 w-4 h-4" />
                     <input type="text" placeholder="检索 ID / 标签..." value={searchQuery} onChange={(e) => setSearchQuery(e.target.value)}
-                      className="w-full pl-12 pr-4 py-2.5 bg-black/80 border border-slate-700 text-slate-100 font-mono text-sm focus:border-cyan-500 outline-none" style={{ transform: 'skewX(-5deg)' }}
+                      className="w-full pl-12 pr-4 py-2.5 bg-black/60 border border-slate-700 text-slate-100 font-mono text-sm focus:border-cyan-500 outline-none" style={{ transform: 'skewX(-5deg)' }}
                     />
                   </div>
                 </div>
                 
                 <div className="divide-y divide-slate-800/80 overflow-y-auto flex-1 p-4 space-y-3 relative z-10">
                   {filteredProblems.map(problem => (
-                    <div key={problem.id} className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 p-4 bg-black/40 hover:bg-cyan-950/20 border border-slate-800 hover:border-cyan-500/50 transition-all group">
+                    <div key={problem.id} className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 p-4 hud-inner-glass hover:bg-cyan-950/20 border border-slate-800 hover:border-cyan-500/50 transition-all group">
                       
                       <div className="flex items-center gap-5">
                         <div className="text-cyan-400 border border-cyan-800 bg-black font-sci-fi font-bold px-3 py-1 text-sm tracking-widest uppercase" style={{ transform: 'skewX(-10deg)' }}>
@@ -727,9 +555,9 @@
 
                       <div className="flex items-center gap-3 shrink-0 mt-2 sm:mt-0">
                         <span className={`text-xs px-4 py-1.5 font-black uppercase tracking-widest border ${
-                          problem.difficulty === '困难' ? 'bg-red-950/30 text-red-500 border-red-900/80' :
-                          problem.difficulty === '中等' ? 'bg-orange-950/30 text-orange-400 border-orange-900/80' :
-                          'bg-green-950/30 text-green-400 border-green-900/80'
+                          problem.difficulty === '困难' ? 'bg-red-950/50 text-red-400 border-red-900/80' :
+                          problem.difficulty === '中等' ? 'bg-orange-950/50 text-orange-400 border-orange-900/80' :
+                          'bg-green-950/50 text-green-400 border-green-900/80'
                         }`} style={{ transform: 'skewX(-10deg)' }}>
                            <span style={{ display: 'inline-block', transform: 'skewX(10deg)' }}>{problem.difficulty}</span>
                         </span>
@@ -769,17 +597,17 @@
                 <form onSubmit={handleAddProblem} className="space-y-6 relative z-10">
                   <div>
                     <label className="block text-xs font-bold text-slate-500 mb-2 font-mono uppercase">Platform</label>
-                    <select value={newPlatform} onChange={(e) => setNewPlatform(e.target.value)} className="w-full bg-black/60 border border-slate-700 text-slate-100 px-4 py-3 focus:border-blue-500 outline-none font-sci-fi font-bold text-base tracking-widest uppercase" style={{ transform: 'skewX(-5deg)' }}>
+                    <select value={newPlatform} onChange={(e) => setNewPlatform(e.target.value)} className="w-full hud-inner-glass border border-slate-700 text-slate-100 px-4 py-3 focus:border-blue-500 outline-none font-sci-fi font-bold text-base tracking-widest uppercase" style={{ transform: 'skewX(-5deg)' }}>
                       <option>Codeforces</option> <option>AtCoder</option> <option>LeetCode</option> <option>Luogu</option>
                     </select>
                   </div>
 
                   <div>
                     <label className="block text-xs font-bold text-slate-500 mb-2 font-mono uppercase">Problem Title</label>
-                    <input type="text" value={newTitle} onChange={(e) => setNewTitle(e.target.value)} placeholder="e.g. A. Watermelon" className="w-full bg-black/60 border border-slate-700 text-slate-100 px-4 py-3 focus:border-blue-500 outline-none font-bold text-base" style={{ transform: 'skewX(-5deg)' }} />
+                    <input type="text" value={newTitle} onChange={(e) => setNewTitle(e.target.value)} placeholder="e.g. A. Watermelon" className="w-full hud-inner-glass border border-slate-700 text-slate-100 px-4 py-3 focus:border-blue-500 outline-none font-bold text-base" style={{ transform: 'skewX(-5deg)' }} />
                   </div>
 
-                  <div className="p-4 bg-black/40 border border-slate-700/80 relative">
+                  <div className="p-4 hud-inner-glass border border-slate-700/80 relative">
                     <label className="flex items-center justify-between text-xs font-bold text-cyan-500 mb-3 font-mono uppercase">
                       <span className="flex items-center gap-2"><FileText size={14}/> MD_Payload</span>
                       <label className="cursor-pointer bg-cyan-950/50 text-cyan-400 px-2 py-1 border border-cyan-800 hover:bg-cyan-900 transition-colors flex items-center gap-1" style={{ transform: 'skewX(-10deg)' }}>
@@ -792,7 +620,7 @@
 
                   <div>
                     <label className="block text-xs font-bold text-slate-500 mb-2 font-mono uppercase">Tags</label>
-                    <input type="text" value={newTags} onChange={(e) => setNewTags(e.target.value)} placeholder="DP, 图论, 数学..." className="w-full bg-black border border-slate-700 text-slate-100 rounded-lg px-4 py-3 focus:border-blue-500 transition-all font-bold" />
+                    <input type="text" value={newTags} onChange={(e) => setNewTags(e.target.value)} placeholder="DP, 图论, 数学..." className="w-full hud-inner-glass border border-slate-700 text-slate-100 rounded-lg px-4 py-3 focus:border-blue-500 transition-all font-bold" />
                   </div>
 
                   <div>
@@ -805,7 +633,7 @@
                               ? (diff === '简单' ? 'bg-green-950/50 border-green-500 text-green-400' :
                                  diff === '中等' ? 'bg-orange-950/50 border-orange-500 text-orange-400' :
                                  'bg-red-950/50 border-red-500 text-red-500')
-                              : 'bg-black/50 border-slate-800 text-slate-600 hover:border-slate-600'
+                              : 'hud-inner-glass border-slate-800 text-slate-500 hover:border-slate-500'
                           }`}
                           style={{ transform: 'skewX(-10deg)' }}
                         >
