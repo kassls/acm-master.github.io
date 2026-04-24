@@ -13,7 +13,7 @@
   <script src="https://cdn.jsdelivr.net/npm/marked/marked.min.js"></script>
   
   <!-- Highlight.js (代码高亮) -->
-  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.8.0/styles/atom-one-dark.min.css">
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.8.0/styles/dracula.min.css">
   <script src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.8.0/highlight.min.js"></script>
 
   <!-- MathJax (LaTeX 数学公式渲染) -->
@@ -32,19 +32,22 @@
     ::-webkit-scrollbar-thumb { background: rgba(6, 182, 212, 0.6); border-radius: 4px; }
     ::-webkit-scrollbar-thumb:hover { background: rgba(239, 68, 68, 0.8); }
 
-    /* 暴力超神特效 */
-    @keyframes god-mode-shake {
-      0%, 100% { transform: translate(0, 0); }
-      20% { transform: translate(-3px, 3px); }
-      40% { transform: translate(3px, -3px); }
-      60% { transform: translate(-3px, -3px); }
-      80% { transform: translate(3px, 3px); }
+    /* 炫酷彩色动态流光背景 */
+    @keyframes colorFlow {
+      0% { background-position: 0% 50%; }
+      50% { background-position: 100% 50%; }
+      100% { background-position: 0% 50%; }
     }
+    .colorful-overlay {
+      background: linear-gradient(-45deg, rgba(255, 0, 128, 0.15), rgba(0, 204, 255, 0.15), rgba(0, 255, 128, 0.15), rgba(255, 204, 0, 0.15));
+      background-size: 400% 400%;
+      animation: colorFlow 10s ease infinite;
+    }
+
     @keyframes hyper-glow {
       0%, 100% { box-shadow: 0 0 50px rgba(239, 68, 68, 0.6), inset 0 0 30px rgba(239, 68, 68, 0.4); border-color: rgba(255,50,50,0.8); }
       50% { box-shadow: 0 0 100px rgba(239, 68, 68, 1), inset 0 0 60px rgba(239, 68, 68, 0.8); border-color: rgba(255,150,150,1); }
     }
-    .shake-active { animation: god-mode-shake 0.3s ease-in-out infinite alternate; }
     .animate-hyper-glow { animation: hyper-glow 1s ease-in-out infinite; }
     
     /* 极致毛玻璃面板 */
@@ -56,18 +59,24 @@
       box-shadow: 0 10px 40px rgba(0, 0, 0, 0.8);
     }
     
-    /* MD 阅读舱专属毛玻璃 */
+    /* MD 阅读舱专属毛玻璃 - 显著提升通透度与色彩饱和度 */
     .reader-glass {
-      background: rgba(15, 23, 42, 0.85);
-      backdrop-filter: blur(24px);
-      -webkit-backdrop-filter: blur(24px);
-      border: 1px solid rgba(103, 232, 249, 0.2);
+      background: rgba(15, 25, 45, 0.35);
+      backdrop-filter: blur(25px) saturate(150%);
+      -webkit-backdrop-filter: blur(25px) saturate(150%);
+      border: 1px solid rgba(255, 255, 255, 0.15);
+      box-shadow: 0 8px 32px 0 rgba(0, 0, 0, 0.37);
     }
 
     /* Markdown 内部排版优化 */
-    .prose pre { padding: 0 !important; margin-top: 1.5em; margin-bottom: 1.5em; border-radius: 0.5rem; border: 1px solid rgba(255,255,255,0.1); }
+    .prose pre { 
+      background: rgba(0, 0, 0, 0.4) !important; 
+      backdrop-filter: blur(10px);
+      -webkit-backdrop-filter: blur(10px);
+      padding: 0 !important; margin-top: 1.5em; margin-bottom: 1.5em; border-radius: 0.5rem; border: 1px solid rgba(255,255,255,0.1); 
+    }
     .prose code { color: #67e8f9 !important; font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace; }
-    .prose pre code { color: inherit !important; padding: 1rem !important; display: block; overflow-x: auto; }
+    .prose pre code { color: inherit !important; padding: 1rem !important; display: block; overflow-x: auto; background: transparent !important; }
     .prose p, .prose li { color: #cbd5e1 !important; line-height: 1.8; }
     .prose h1, .prose h2, .prose h3, .prose h4 { color: #f8fafc !important; font-weight: 800; border-bottom: 1px solid rgba(255,255,255,0.1); padding-bottom: 0.5rem; }
     .prose a { color: #38bdf8 !important; text-decoration: none; }
@@ -88,9 +97,9 @@
     } from 'https://esm.sh/lucide-react@0.263.1';
 
     // ==========================================
-    // 暴力游戏级 3D 跃迁引擎 (Canvas) - 移除背景图干扰，纯粹光效
+    // 炫酷彩色霓虹粒子网引擎 (Canvas) - 彻底重构的无限制彩色效果
     // ==========================================
-    const HyperDriveBackground = ({ isGodMode }) => {
+    const NeonPlexusBackground = ({ isGodMode }) => {
       const canvasRef = useRef(null);
 
       useEffect(() => {
@@ -99,67 +108,93 @@
         let width = canvas.width = window.innerWidth;
         let height = canvas.height = window.innerHeight;
 
-        const stars = [];
-        const numStars = 1000; 
+        let particles = [];
+        const numParticles = isGodMode ? 90 : 50; 
+        let globalHue = 0;
 
-        for (let i = 0; i < numStars; i++) {
-          stars.push({
-            x: Math.random() * width * 2 - width,
-            y: Math.random() * height * 2 - height,
-            z: Math.random() * width,
+        for (let i = 0; i < numParticles; i++) {
+          particles.push({
+            x: Math.random() * width,
+            y: Math.random() * height,
+            vx: (Math.random() - 0.5) * (isGodMode ? 3 : 0.8),
+            vy: (Math.random() - 0.5) * (isGodMode ? 3 : 0.8),
+            colorOffset: Math.random() * 360,
+            size: Math.random() * 2 + 1
           });
         }
 
         let animationFrameId;
 
-        const executeFrame = () => {
-          // 极度拖尾效果制造跃迁感
-          ctx.fillStyle = isGodMode ? 'rgba(5, 0, 0, 0.3)' : 'rgba(0, 5, 10, 0.4)';
+        const draw = () => {
+          ctx.globalCompositeOperation = 'source-over';
+          ctx.fillStyle = isGodMode ? 'rgba(5, 5, 10, 0.2)' : 'rgba(5, 10, 20, 0.4)';
           ctx.fillRect(0, 0, width, height);
+          
+          // 在超神模式下开启高光叠加混合，制造迷幻感
+          ctx.globalCompositeOperation = isGodMode ? 'lighter' : 'source-over';
+          globalHue += isGodMode ? 1.5 : 0.2;
 
-          // 超神状态：光速跃迁 (极快)，普通状态：巡航
-          const speed = isGodMode ? 40 : 4;
-          const centerX = width / 2;
-          const centerY = height / 2;
+          const connectDistance = isGodMode ? 180 : 120;
 
-          for (let i = 0; i < numStars; i++) {
-            let star = stars[i];
-            const pastZ = star.z;
-            star.z -= speed;
-
-            if (star.z <= 1) {
-              star.z = width;
-              star.x = Math.random() * width * 2 - width;
-              star.y = Math.random() * height * 2 - height;
-              continue;
-            }
-
-            const x = centerX + (star.x / star.z) * width;
-            const y = centerY + (star.y / star.z) * width;
+          for (let i = 0; i < numParticles; i++) {
+            let p = particles[i];
             
-            const pastX = centerX + (star.x / pastZ) * width;
-            const pastY = centerY + (star.y / pastZ) * width;
+            p.x += p.vx;
+            p.y += p.vy;
 
-            // 粒子粗细根据距离
-            const size = (1 - star.z / width) * (isGodMode ? 5 : 2); 
-
-            // 超神状态：血红/亮橙渐变。普通：赛博青蓝
-            if (isGodMode) {
-              ctx.strokeStyle = `rgba(255, ${Math.floor(80 * (star.z/width))}, 0, ${1 - star.z/width})`;
-            } else {
-              ctx.strokeStyle = `rgba(0, 200, 255, ${1 - star.z/width})`;
-            }
+            // 边缘反弹
+            if (p.x < 0 || p.x > width) p.vx *= -1;
+            if (p.y < 0 || p.y > height) p.vy *= -1;
 
             ctx.beginPath();
-            ctx.lineWidth = size;
-            ctx.moveTo(pastX, pastY);
-            ctx.lineTo(x, y);
-            ctx.stroke();
+            ctx.arc(p.x, p.y, p.size, 0, Math.PI * 2);
+            ctx.fillStyle = isGodMode ? `hsl(${(globalHue + p.colorOffset) % 360}, 100%, 65%)` : 'rgba(6, 182, 212, 0.8)';
+            ctx.fill();
+
+            // 绘制连线与彩色发光几何体
+            for (let j = i + 1; j < numParticles; j++) {
+              let p2 = particles[j];
+              let dx = p.x - p2.x;
+              let dy = p.y - p2.y;
+              let dist = Math.sqrt(dx * dx + dy * dy);
+
+              if (dist < connectDistance) {
+                ctx.beginPath();
+                ctx.moveTo(p.x, p.y);
+                ctx.lineTo(p2.x, p2.y);
+                ctx.lineWidth = isGodMode ? 1.5 : 0.8;
+                ctx.strokeStyle = isGodMode 
+                  ? `hsla(${(globalHue + p.colorOffset) % 360}, 100%, 60%, ${1 - dist / connectDistance})`
+                  : `rgba(6, 182, 212, ${1 - dist / connectDistance})`;
+                ctx.stroke();
+
+                if (isGodMode) {
+                  for (let k = j + 1; k < numParticles; k++) {
+                    let p3 = particles[k];
+                    let dx2 = p2.x - p3.x;
+                    let dy2 = p2.y - p3.y;
+                    let dist2 = Math.sqrt(dx2 * dx2 + dy2 * dy2);
+                    
+                    // 当三个点互相靠近时，渲染彩色多边形叠加色
+                    if (dist2 < connectDistance) {
+                       ctx.beginPath();
+                       ctx.moveTo(p.x, p.y);
+                       ctx.lineTo(p2.x, p2.y);
+                       ctx.lineTo(p3.x, p3.y);
+                       ctx.closePath();
+                       ctx.fillStyle = `hsla(${(globalHue + p.colorOffset) % 360}, 100%, 50%, ${0.04 * (1 - dist/connectDistance)})`;
+                       ctx.fill();
+                    }
+                  }
+                }
+              }
+            }
           }
-          animationFrameId = requestAnimationFrame(executeFrame);
+
+          animationFrameId = requestAnimationFrame(draw);
         };
 
-        executeFrame();
+        draw();
 
         const handleResize = () => {
           width = canvas.width = window.innerWidth;
@@ -176,7 +211,7 @@
       return (
         <canvas 
           ref={canvasRef} 
-          className="fixed inset-0 z-0 pointer-events-none mix-blend-screen"
+          className="fixed inset-0 z-0 pointer-events-none"
         />
       );
     };
@@ -405,13 +440,13 @@
 
       // 主控制台视图
       return (
-        <div className={`min-h-screen relative font-sans ${isGodMode ? 'shake-active' : ''}`}>
+        <div className="min-h-screen relative font-sans">
           
-          {/* 超神状态专属：满屏红色血腥遮罩 */}
-          {isGodMode && <div className="fixed inset-0 z-0 pointer-events-none shadow-[inset_0_0_200px_rgba(255,0,0,0.6)] mix-blend-screen" />}
+          {/* 超神状态专属：彩色动态流光遮罩 */}
+          {isGodMode && <div className="fixed inset-0 z-0 pointer-events-none colorful-overlay mix-blend-screen" />}
           
-          {/* 纯粹的 3D 跃迁引擎 (无背景图干扰) */}
-          <HyperDriveBackground isGodMode={isGodMode} />
+          {/* 炫酷彩色霓虹粒子网 */}
+          <NeonPlexusBackground isGodMode={isGodMode} />
 
           {/* 主体 UI */}
           <div className="max-w-7xl mx-auto space-y-6 relative z-10 p-4 md:p-8">
