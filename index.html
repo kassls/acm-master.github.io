@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>ACMer 核心控制台 - 终极极客版 v6.0</title>
+  <title>ACMer 核心控制台 - 终极极客版 v6.5</title>
   
   <!-- 稳定 CDN 节点，防国内屏蔽 -->
   <script src="https://cdn.tailwindcss.com"></script>
@@ -120,7 +120,7 @@
       box-shadow: 0 8px 32px 0 rgba(0, 0, 0, 0.5);
     }
 
-    /* === Markdown 极客渲染体系 (C++ 代码高亮终极修复) === */
+    /* === Markdown 极客渲染体系 (C++ 语法高亮彻底复活版) === */
     .md-prose { color: #e2e8f0; font-size: 1.05rem; line-height: 1.8; word-break: break-word; }
     .md-prose h1, .md-prose h2, .md-prose h3 { color: #ffffff; font-family: 'Rajdhani', sans-serif; font-weight: 700; margin-top: 1.5em; margin-bottom: 0.5em; letter-spacing: 0.5px; }
     .md-prose h1 { font-size: 2.25rem; border-bottom: 2px solid rgba(6, 182, 212, 0.4); padding-bottom: 0.3em; }
@@ -130,13 +130,13 @@
     .md-prose ul { list-style-type: disc; padding-left: 1.5em; }
     .md-prose ol { list-style-type: decimal; padding-left: 1.5em; }
     
-    /* 仅针对短代码（行内代码）做粉色样式 */
+    /* 单行代码粉色底纹 */
     .md-prose code:not(pre code) { 
       font-family: 'Fira Code', monospace; background: rgba(217, 70, 239, 0.15); color: #f472b6; 
       padding: 0.2em 0.4em; border-radius: 4px; font-size: 0.9em; 
     }
     
-    /* 针对代码块的外层容器做毛玻璃 */
+    /* 代码块最外层，赋予毛玻璃 */
     .md-prose pre { 
       background: rgba(15, 20, 30, 0.5) !important; 
       backdrop-filter: blur(12px);
@@ -149,7 +149,7 @@
       margin: 1.5em 0; 
     }
     
-    /* 彻底放权！只去除默认黑色背景，其余语法高亮全权交给 highlight.js 自己的类去处理 */
+    /* 核心！移除一切干扰 highlight.js 的设置，让 Dracula 原生颜色展现 */
     .md-prose pre code.hljs { 
       background: transparent !important; 
       padding: 0 !important; 
@@ -174,13 +174,23 @@
       Plus, FileText, Upload, ArrowLeft, TerminalSquare, Trash2, Target, Zap, Clock
     } from 'https://esm.sh/lucide-react@0.263.1';
 
-    // 基础 Marked 解析器配置，高亮任务由 React 渲染后执行
-    if (typeof marked !== 'undefined') {
-      marked.setOptions({ breaks: true, gfm: true });
+    // 终极修复：回归底层注入。设定严格的解析规则与类名前缀。
+    if (typeof marked !== 'undefined' && window.hljs) {
+      marked.setOptions({
+        breaks: true,
+        gfm: true,
+        langPrefix: 'hljs language-', // 确保生成的类名严格契合 CSS
+        highlight: function(code, lang) {
+          if (lang && window.hljs.getLanguage(lang)) {
+            return window.hljs.highlight(code, { language: lang }).value;
+          }
+          return window.hljs.highlightAuto(code).value;
+        }
+      });
     }
 
     // ==========================================
-    // 终极 3D 引擎 v6.0：纯粹星际漩涡 & 曲率多边形虫洞
+    // 终极 3D 引擎 v6.5：永恒银河 & 纯粹呼吸虫洞
     // ==========================================
     const VfxEngine = ({ isGodMode, burstTrigger }) => {
       const canvasRef = useRef(null);
@@ -190,145 +200,132 @@
         const ctx = canvas.getContext('2d', { alpha: false });
         let w = canvas.width = window.innerWidth;
         let h = canvas.height = window.innerHeight;
-
         let animationId;
         let time = 0;
         let burstMultiplier = 1;
 
-        // --- 方案A：< 10题 永恒银河漩涡 (放弃消失与扎堆，全局平滑分布) ---
-        const numStars = 2500; 
-        const stars = Array.from({ length: numStars }, () => ({
-          angle: Math.random() * Math.PI * 2,
-          radius: Math.random() * w * 1.5, // 初始随机全屏分布
-          z: Math.random() * w
-        }));
+        // ========================================================
+        // 方案A：< 10题 永恒银河漩涡 (Eternal Galaxy)
+        // 绝不消失、绝不重置、仅遵循三维公转引力
+        // ========================================================
+        const numStars = 6000; // 粒子数直接拉满
+        const galaxyStars = Array.from({ length: numStars }, () => {
+          const dist = Math.random() * w * 1.2; // 从中心到极远处的分布半径
+          return {
+            dist: dist,
+            angle: Math.random() * Math.PI * 2,
+            z: 300 + Math.random() * 600, // 固定的随机深度，永不跨越摄像机
+            // 越靠近中心(dist小)，公转速度越快，形成引力差速
+            speed: 0.0003 + (0.0015 * Math.max(0, 1 - dist / (w * 0.8))),
+            size: Math.random() * 1.5 + 0.5
+          };
+        });
 
-        // --- 方案B：>= 10题 曲率虫洞隧道 (放弃粒子，使用纯数学多边形网格环) ---
-        const tunnelRings = 40; // 圆环层数 (层数越多管子越长)
-        const tunnelSegments = 20; // 管道多边形边数
-        const tunnelMaxZ = 4000; // 管道Z轴总深度
+        // ========================================================
+        // 方案B：>= 10题 曲率呼吸虫洞 (Breathing Wormhole)
+        // 彻底抛弃散落粒子，使用由 60 个固定圆环构成的三维网格
+        // ========================================================
+        const tunnelRings = 60; 
+        const tunnelSegments = 24; 
+        // 生成横截面圆环，Z轴坐标完全钉死，永不移动！解决一卡一卡的问题！
         const rings = Array.from({ length: tunnelRings }, (_, i) => ({
-          z: (i / tunnelRings) * tunnelMaxZ
+          z: 50 + i * 40 
         }));
 
         const animate = () => {
           time++;
           if (burstMultiplier > 1) burstMultiplier *= 0.95;
 
-          ctx.fillStyle = `rgba(3, 5, 8, ${isGodMode ? 0.3 : 0.25})`; 
+          // 开启轻微的拖影效果，让网格和星辰更有速度感
+          ctx.fillStyle = `rgba(3, 5, 8, ${0.2 / burstMultiplier})`; 
           ctx.fillRect(0, 0, w, h);
           ctx.globalCompositeOperation = 'lighter';
           const cx = w / 2; const cy = h / 2;
 
           if (isGodMode) {
-            // ========================================================
-            // 【>= 10题 绝对平滑曲率虫洞】
-            // ========================================================
-            const speed = 12 * burstMultiplier; // 平稳漫游速度
-            
-            // 构建 3D 环状连线序列
-            rings.forEach(ring => {
-              ring.z -= speed;
-              // 关键：无缝环绕。跑到镜头后面了就补到最深处，绝对不断线！
-              if (ring.z < 1) ring.z += tunnelMaxZ; 
-            });
+            // ----------------------------------------------------
+            // 绘制呼吸虫洞
+            // ----------------------------------------------------
+            let prevPoints = null;
 
-            // 按深度排序（从远到近绘制）
+            // 从深处往近处绘制，保证层级正确
             const sortedRings = [...rings].sort((a, b) => b.z - a.z);
 
-            ctx.lineWidth = 1.5;
-            sortedRings.forEach((ring, ringIndex) => {
-              const depthAlpha = Math.max(0, 1 - (ring.z / tunnelMaxZ));
-              if (depthAlpha <= 0) return;
+            ctx.lineWidth = 1.2;
+            sortedRings.forEach((ring) => {
+              // 1. 喇叭口扩张：让离镜头越近的地方 (z越小) 半径急剧变大
+              let baseRadius = w * 0.2;
+              if (ring.z < 300) {
+                baseRadius += (300 - ring.z) * 1.5; 
+              }
 
-              // 管道中心弯曲曲率公式：类似虫洞内部扭曲的空间
-              const bendX = Math.sin(time * 0.005 + ring.z * 0.001) * (w * 0.2);
-              const bendY = Math.cos(time * 0.004 + ring.z * 0.001) * (h * 0.2);
+              // 2. 核心！沿着管道传递的正弦波，制造“扩张和收缩”的吞噬呼吸感
+              const wave = Math.sin(time * 0.05 - ring.z * 0.015);
+              const dynamicRadius = baseRadius + wave * (w * 0.06);
 
-              const ringRadius = w * 0.3; // 管道半径
-              
+              // 3. 管道空间弯曲：整体像蛇一样微幅扭动
+              const bendX = Math.sin(time * 0.01 + ring.z * 0.002) * (w * 0.2);
+              const bendY = Math.cos(time * 0.008 + ring.z * 0.002) * (h * 0.2);
+
+              const scale = w / ring.z;
               const points = [];
-              // 计算圆环上所有顶点的 3D 投影坐标
+
+              // 计算该层圆环上的多边形顶点
               for (let i = 0; i < tunnelSegments; i++) {
-                const angle = (i / tunnelSegments) * Math.PI * 2 + (time * 0.002); // 整体管道在缓慢旋转
-                const x3d = Math.cos(angle) * ringRadius;
-                const y3d = Math.sin(angle) * ringRadius;
-                
-                // 3D 投影公式，附带弯曲偏移
-                const scale = w / ring.z;
-                const px = cx + (x3d + bendX) * scale;
-                const py = cy + (y3d + bendY) * scale;
+                // 管道还在极其缓慢地自转
+                const angle = (i / tunnelSegments) * Math.PI * 2 + (time * 0.002) + (ring.z * 0.0005);
+                const px = cx + (Math.cos(angle) * dynamicRadius + bendX) * scale;
+                const py = cy + (Math.sin(angle) * dynamicRadius + bendY) * scale;
                 points.push({ x: px, y: py });
               }
 
-              // 绘制该层的圆环边线 (青色到紫色的深度渐变)
+              const depthAlpha = Math.max(0, 1 - (ring.z / (tunnelRings * 40)));
+              if (depthAlpha <= 0) return;
+
+              // 根据时间流逝和深度形成渐变发光色彩
+              const hue = (200 + ring.z * 0.05 - time * 1.5) % 360;
+              ctx.strokeStyle = `hsla(${hue}, 100%, 65%, ${depthAlpha * 0.8})`;
+
+              // 绘制单层横向圆环
               ctx.beginPath();
-              points.forEach((p, i) => { i === 0 ? ctx.moveTo(p.x, p.y) : ctx.lineTo(p.x, p.y); });
+              ctx.moveTo(points[0].x, points[0].y);
+              for (let i = 1; i < tunnelSegments; i++) ctx.lineTo(points[i].x, points[i].y);
               ctx.closePath();
-              
-              const hue = (200 + ring.z * 0.05 + time) % 360; 
-              ctx.strokeStyle = `hsla(${hue}, 100%, 65%, ${depthAlpha * 0.7})`;
               ctx.stroke();
 
-              // 绘制连接上一层的纵向网格线 (只连一小部分，形成穿梭线效果)
-              if (ringIndex > 0) {
-                const prevRing = sortedRings[ringIndex - 1];
-                const prevBendX = Math.sin(time * 0.005 + prevRing.z * 0.001) * (w * 0.2);
-                const prevBendY = Math.cos(time * 0.004 + prevRing.z * 0.001) * (h * 0.2);
-                const prevScale = w / prevRing.z;
-
+              // 绘制纵向连接线（经线），构建完整网格
+              if (prevPoints) {
                 ctx.beginPath();
-                for (let i = 0; i < tunnelSegments; i += 2) { // 隔开画网格线，更美观
-                   const angle = (i / tunnelSegments) * Math.PI * 2 + (time * 0.002);
-                   const px = points[i].x; const py = points[i].y;
-                   const prevX = cx + (Math.cos(angle)*ringRadius + prevBendX) * prevScale;
-                   const prevY = cy + (Math.sin(angle)*ringRadius + prevBendY) * prevScale;
-                   
-                   ctx.moveTo(px, py);
-                   ctx.lineTo(prevX, prevY);
+                // 隔线绘制以保持网格不会太密集
+                for (let i = 0; i < tunnelSegments; i += 2) { 
+                  ctx.moveTo(points[i].x, points[i].y);
+                  ctx.lineTo(prevPoints[i].x, prevPoints[i].y);
                 }
                 ctx.strokeStyle = `hsla(${hue}, 100%, 75%, ${depthAlpha * 0.4})`;
                 ctx.stroke();
               }
+              prevPoints = points;
             });
 
           } else {
-            // ========================================================
-            // 【< 10题 永恒深空银河漩涡】
-            // ========================================================
-            stars.forEach(star => {
-              const prevScale = w / star.z;
-              const px = cx + Math.cos(star.angle) * star.radius * prevScale;
-              const py = cy + Math.sin(star.angle) * star.radius * prevScale;
+            // ----------------------------------------------------
+            // 绘制永恒银河漩涡
+            // ----------------------------------------------------
+            galaxyStars.forEach(star => {
+              // 永远缓慢旋转，内快外慢
+              star.angle -= star.speed;
 
-              // 越内圈转越快，外圈极度平缓
-              const distRatio = Math.max(0.1, star.radius / w);
-              star.angle -= 0.002 / (distRatio + 0.5); 
-              
-              star.z -= 1.0; 
-              // 半径不做剧烈收缩扩张，保持相对稳定，偶尔微扰
-              star.radius += Math.sin(time * 0.05 + star.angle) * 0.5;
-
-              // 若脱离视野 (过近或跑出屏幕边界)，在全空域随机重生，杜绝同心圆发散感
               const scale = w / star.z;
-              const nx = cx + Math.cos(star.angle) * star.radius * scale;
-              const ny = cy + Math.sin(star.angle) * star.radius * scale;
+              const px = cx + Math.cos(star.angle) * star.dist * scale;
+              const py = cy + Math.sin(star.angle) * star.dist * scale;
 
-              if (star.z < 1 || nx < -w || nx > w * 2 || ny < -h || ny > h * 2) {
-                star.radius = Math.random() * w * 1.5; // 重生在广阔空域
-                star.angle = Math.random() * Math.PI * 2;
-                star.z = w * (0.8 + Math.random() * 0.4); 
-                return; // 跳过此帧绘制
-              }
+              // 越靠外的星星，亮度自然降低一点
+              const edgeAlpha = Math.max(0.1, 1 - (star.dist / (w * 1.2)));
 
               ctx.beginPath();
-              ctx.moveTo(px, py);
-              ctx.lineTo(nx, ny);
-
-              const depthAlpha = Math.max(0, 1 - star.z / w);
-              ctx.strokeStyle = `hsla(190, 100%, 70%, ${depthAlpha * 0.6})`;
-              ctx.lineWidth = depthAlpha * 2 + 0.1;
-              ctx.stroke();
+              ctx.arc(px, py, star.size * scale, 0, Math.PI * 2);
+              ctx.fillStyle = `hsla(190, 100%, 75%, ${edgeAlpha})`;
+              ctx.fill();
             });
           }
 
@@ -356,16 +353,8 @@
       const [showBgSettings, setShowBgSettings] = useState(false);
 
       useEffect(() => {
-        // 终极修复方案：等组件挂载并在 DOM 中生成完整代码块后，手动剥离干扰，执行 Highlight.js
-        if (contentRef.current && window.hljs) {
-          const blocks = contentRef.current.querySelectorAll('pre code');
-          blocks.forEach((block) => {
-             // 强制赋予基础类名并移除旧标记，激活 Dracula 色彩引擎
-             block.classList.add('hljs');
-             delete block.dataset.highlighted;
-             window.hljs.highlightElement(block);
-          });
-        }
+        // 由于已经在 marked 层完全挂载了 highlight.js 引擎
+        // 这里绝对不再需要手动寻找 DOM 去修改代码颜色，只执行 MathJax 公式渲染
         if (contentRef.current && window.MathJax && window.MathJax.typesetPromise) { 
           window.MathJax.typesetPromise([contentRef.current]).catch((err) => console.log(err)); 
         }
@@ -390,8 +379,12 @@
       };
 
       const getMarkdownHtml = () => {
-        if (typeof marked !== 'undefined') {
-          return marked.parse(problem.markdown || '> *该节点暂无详细记忆数据。*');
+        try {
+          if (typeof marked !== 'undefined') {
+            return marked.parse(problem.markdown || '> *该节点暂无详细记忆数据。*');
+          }
+        } catch (error) {
+          console.error('Markdown 编译异常:', error);
         }
         return '<p class="text-red-400 font-bold">检测到环境核心解析库异常拦截，渲染引擎加载失败。请检查当前网络状态。</p>';
       };
@@ -586,7 +579,7 @@
                   <h1 className="text-2xl md:text-3xl font-sci-fi font-black text-white tracking-widest uppercase">
                     ACMer <span className={isGodMode ? 'text-fuchsia-400 drop-shadow-[0_0_10px_#d946ef]' : 'text-cyan-400'}>NEXUS</span>
                   </h1>
-                  <p className="text-slate-500 text-xs font-mono tracking-widest mt-1">v6.0 // INTERSTELLAR_ENGINE</p>
+                  <p className="text-slate-500 text-xs font-mono tracking-widest mt-1">v6.5 // INTERSTELLAR_ENGINE</p>
                 </div>
               </div>
               <div className="text-right hidden md:block relative z-10">
