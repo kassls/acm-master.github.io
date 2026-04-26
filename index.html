@@ -5,8 +5,27 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>CP Core Tracker</title>
   
+  <!-- Tailwind CSS -->
   <script src="https://cdn.tailwindcss.com"></script>
+  
+  <!-- Babel for React/JSX -->
   <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
+
+  <!-- Highlight.js for Code Highlighting -->
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.8.0/styles/atom-one-dark.min.css">
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.8.0/highlight.min.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.8.0/languages/cpp.min.js"></script>
+
+  <!-- Marked.js for Markdown Parsing -->
+  <script src="https://cdn.jsdelivr.net/npm/marked@9.1.2/marked.min.js"></script>
+
+  <!-- DOMPurify for Security -->
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/dompurify/3.0.6/purify.min.js"></script>
+
+  <!-- KaTeX for Math ($p_i$) -->
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/katex@0.16.8/dist/katex.min.css">
+  <script src="https://cdn.jsdelivr.net/npm/katex@0.16.8/dist/katex.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/katex@0.16.8/dist/contrib/auto-render.min.js"></script>
 </head>
 <body class="bg-[#07090e] text-gray-200">
   <div id="root"></div>
@@ -18,23 +37,50 @@
       Code2, CheckCircle2, Clock, CalendarDays, Tag, Plus, 
       Target, Trophy, Search, FileText, X, Terminal, Sparkles, Upload, ImageIcon, ImagePlus
     } from 'https://esm.sh/lucide-react@0.263.1';
-    // 引入安全的 Markdown 解析器
-    import { marked } from 'https://esm.sh/marked@9.1.2';
-    import DOMPurify from 'https://esm.sh/dompurify@3.0.6';
 
-    // 初始化模拟数据，包含一些 Markdown 语法供测试
+    // Get globals from window
+    const { marked, DOMPurify, hljs, renderMathInElement } = window;
+
+    // 1. Configure marked to use highlight.js
+    marked.setOptions({
+      highlight: function(code, lang) {
+        if (lang && hljs.getLanguage(lang)) {
+          return hljs.highlight(code, { language: lang }).value;
+        }
+        return hljs.highlightAuto(code).value;
+      },
+      langPrefix: 'hljs language-',
+      breaks: true,
+      gfm: true
+    });
+
+    // 2. Safe Markdown Renderer
+    const getRenderedMarkdown = (md) => {
+        if (!md) return '';
+        try {
+            const rawHtml = marked.parse(md);
+            // Allow classes for highlight.js and KaTeX
+            return DOMPurify.sanitize(rawHtml, {
+                ALLOWED_TAGS: ['h1', 'h2', 'h3', 'h4', 'h5', 'h6', 'blockquote', 'p', 'a', 'ul', 'ol',
+                     'nl', 'li', 'b', 'i', 'strong', 'em', 'strike', 'code', 'hr', 'br', 'div',
+                     'table', 'thead', 'caption', 'tbody', 'tr', 'th', 'td', 'pre', 'iframe', 'span', 'img', 'del'],
+                ALLOWED_ATTR: ['href', 'name', 'target', 'src', 'class', 'id', 'alt', 'title']
+            });
+        } catch (e) {
+            console.error("Markdown parse error:", e);
+            return '<p class="text-red-400 font-mono">[ 渲染引擎错误: MD_PARSE_FAILED ]</p>';
+        }
+    };
+
+    // 初始化模拟数据（包含高亮和数学公式测试）
     const initialRecords = [
       { 
-        id: '1', date: new Date().toISOString().split('T')[0], platform: 'Codeforces', problemId: '1945C', rating: 1400, tags: 'math, greedy', status: 'AC',
-        solution: '# 核心思路\n通过预处理前缀和，O(1) 判定左侧和右侧的 0/1 数量。\n\n## 复杂度\n- **时间**: O(N)\n- **空间**: O(N)\n\n> 贪心即可，注意中心点的取整逻辑。'
+        id: '1', date: new Date().toISOString().split('T')[0], platform: 'Codeforces', problemId: '1945C', rating: 2400, tags: '2-SAT, segment tree', status: 'AC',
+        solution: '### 1. 🌍 剥去外衣 (Core Conflict Translation)\n\n理解了这套前缀逻辑后，再遇到“某个点选了，与之相关的一棵线段树上的区间都不能选”这类 2400 分的线段树优化建图 2-SAT，本质也只是将 $p_i$ 这个一维前缀状态，升级成了树形状态而已。\n\n```cpp\nint main() {\n    ios::sync_with_stdio(false);\n    cin.tie(nullptr);\n    \n    // 3. 互斥核心: x[i] 选 -> 前缀 p[i-1] 必全假\n    add_implication(x_true, prev_p_false);\n    \n    solve();\n    return 0;\n}\n```\n> 还需要推演哪道特定题目的建模逻辑？直接发题号或题意即可。'
       },
       { 
         id: '2', date: new Date().toISOString().split('T')[0], platform: 'AtCoder', problemId: 'ABC345-D', rating: 1200, tags: 'dp, bitmask', status: 'Upsolving',
-        solution: '典型的状压 DP。用一个整型变量表示当前网格的覆盖状态。\n\n```cpp\n// 转移方程核心\ndp[mask | new_mask] = true;\n```'
-      },
-      { 
-        id: '3', date: new Date(Date.now() - 86400000).toISOString().split('T')[0], platform: 'Luogu', problemId: 'P3372', rating: 1500, tags: 'segment tree', status: 'AC',
-        solution: '线段树模板题1。\n\n### 易错点\n1. Lazy Tag 下传时，左右儿子的区间长度千万不能乘错。\n2. `build()` 的时候记得初始化 `tree[p]`。'
+        solution: '典型的状压 DP。用一个整型变量表示当前网格的覆盖状态。\n\n复杂的转移可以通过公式表达：$$dp[mask | new\\_mask] = dp[mask] + 1$$\n\n```cpp\n// 转移方程核心\nif (!(mask & new_mask)) {\n    dp[mask | new_mask] = true;\n}\n```'
       }
     ];
 
@@ -94,6 +140,25 @@
 
       const mdInputRef = useRef(null);
       const imgInputRef = useRef(null);
+
+      // 处理公式自动渲染
+      useEffect(() => {
+          if (selectedRecord && renderMathInElement) {
+              // 留出时间让 React 将 HTML 渲染到 DOM 中
+              setTimeout(() => {
+                  const el = document.getElementById('markdown-container');
+                  if (el) {
+                      renderMathInElement(el, {
+                          delimiters: [
+                              {left: '$$', right: '$$', display: true},
+                              {left: '$', right: '$', display: false}
+                          ],
+                          throwOnError: false
+                      });
+                  }
+              }, 50);
+          }
+      }, [selectedRecord]);
 
       const handleMdImport = (e) => {
         const file = e.target.files[0];
@@ -191,18 +256,17 @@
             }
             .animate-count-glow { animation: count-up-glow 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275) forwards; }
             
-            /* 玄幻阵法灵石呼吸动画 */
             @keyframes spirit-breathe {
               0%, 100% { filter: brightness(1); transform: scale(1); }
               50% { filter: brightness(1.3); transform: scale(1.15); }
             }
             .animate-spirit { animation: spirit-breathe 2.5s ease-in-out infinite; }
 
-            /* 机甲风 Markdown 渲染样式 */
+            /* Markdown 与代码高亮样式整合 */
             .markdown-body { font-family: 'Fira Code', monospace, sans-serif; line-height: 1.6; font-size: 14px; color: #d1d5db; }
             .markdown-body h1, .markdown-body h2, .markdown-body h3 { color: #fff; font-weight: 800; margin-top: 1.8em; margin-bottom: 0.8em; border-bottom: 1px solid rgba(6, 182, 212, 0.2); padding-bottom: 0.3em; }
-            .markdown-body h1 { font-size: 2em; color: #22d3ee; text-shadow: 0 0 12px rgba(34, 211, 238, 0.4); }
-            .markdown-body h2 { font-size: 1.5em; color: #e2e8f0; }
+            .markdown-body h1 { font-size: 1.8em; color: #22d3ee; text-shadow: 0 0 12px rgba(34, 211, 238, 0.4); }
+            .markdown-body h2 { font-size: 1.4em; color: #e2e8f0; }
             .markdown-body p { margin-bottom: 1em; }
             .markdown-body a { color: #22d3ee; text-decoration: none; border-bottom: 1px solid transparent; transition: all 0.2s; }
             .markdown-body a:hover { border-bottom-color: #22d3ee; text-shadow: 0 0 8px rgba(34,211,238,0.5); }
@@ -211,11 +275,19 @@
             .markdown-body ul { list-style-type: disc; }
             .markdown-body ul li::marker { color: #06b6d4; }
             .markdown-body li + li { margin-top: 0.3em; }
+            
+            /* 行内代码 */
             .markdown-body code { background-color: rgba(6, 182, 212, 0.1); border: 1px solid rgba(6, 182, 212, 0.3); padding: 0.15em 0.4em; border-radius: 4px; font-size: 90%; color: #67e8f9; }
-            .markdown-body pre { background-color: #0d1117; padding: 1rem; overflow-x: auto; border-radius: 8px; border: 1px solid rgba(6, 182, 212, 0.3); margin-bottom: 1.2em; box-shadow: inset 0 0 10px rgba(0,0,0,0.5); }
-            .markdown-body pre code { background-color: transparent; border: none; padding: 0; color: #e5e7eb; font-size: 13px; }
+            
+            /* 代码块与 highlight.js (atom-one-dark) 对接 */
+            .markdown-body pre { background-color: #0d1117 !important; padding: 1.2rem; overflow-x: auto; border-radius: 8px; border: 1px solid rgba(6, 182, 212, 0.2); margin-bottom: 1.2em; box-shadow: inset 0 0 10px rgba(0,0,0,0.5); }
+            .markdown-body pre code { background-color: transparent !important; border: none; padding: 0 !important; font-size: 13px; line-height: 1.5; }
+            
             .markdown-body blockquote { border-left: 4px solid #06b6d4; padding-left: 1em; margin: 1em 0; color: #9ca3af; background: linear-gradient(90deg, rgba(6,182,212,0.1), transparent); padding-block: 0.5em; border-radius: 0 8px 8px 0; }
             .markdown-body img { max-width: 100%; border-radius: 8px; border: 1px solid rgba(6, 182, 212, 0.3); box-shadow: 0 0 20px rgba(6, 182, 212, 0.15); margin: 1em 0; background: rgba(0,0,0,0.5); }
+            
+            /* KaTeX Math adjustments */
+            .katex { font-size: 1.1em; color: #fff; text-shadow: 0 0 8px rgba(255,255,255,0.3); }
           `}} />
 
           <div className="absolute top-[-15%] left-[-10%] w-[50%] h-[50%] bg-cyan-600/10 rounded-full blur-[150px] pointer-events-none"></div>
@@ -265,7 +337,6 @@
                     </div>
                   </div>
                   
-                  {/* === 赛博修仙玄幻风格：悬浮五行聚灵阵 (Cyber-Dao Spirit Array) === */}
                   <div className="w-full md:w-auto flex items-center justify-start md:justify-center gap-5 md:ml-auto md:mr-8 mt-4 md:mt-0">
                     <div className="text-left md:text-right flex flex-col items-start md:items-end">
                       <p className="text-[10px] font-xuanhuan font-bold tracking-[0.3em] text-slate-400 mb-1">聚灵阵眼 / SPIRIT MATRIX</p>
@@ -275,23 +346,18 @@
                     </div>
                     
                     <div className="relative w-28 h-28 flex-shrink-0 ml-auto md:ml-0">
-                      {/* 旋转背景阵纹 (太极/五行阵法图) */}
                       <svg className={`absolute inset-0 w-full h-full ${stats.todayCount >= 5 ? 'animate-[spin_4s_linear_infinite] text-fuchsia-500/60 drop-shadow-[0_0_15px_rgba(217,70,239,0.6)]' : 'animate-[spin_15s_linear_infinite] text-cyan-500/40'}`} viewBox="0 0 100 100">
-                        {/* 复杂玄幻阵纹线条 */}
                         <circle cx="50" cy="50" r="48" fill="none" stroke="currentColor" strokeWidth="0.5" strokeDasharray="4 2 1 2" />
                         <circle cx="50" cy="50" r="44" fill="none" stroke="currentColor" strokeWidth="1" />
                         <circle cx="50" cy="50" r="28" fill="none" stroke="currentColor" strokeWidth="0.5" strokeDasharray="3 3" />
-                        {/* 正五芒星 */}
                         <polygon points="50,6 91.8,36.4 75.8,85.6 24.2,85.6 8.2,36.4" fill="none" stroke="currentColor" strokeWidth="0.5" />
-                        {/* 倒五芒星交错形成十方护法阵 */}
                         <polygon points="50,94 8.2,63.6 24.2,14.4 75.8,14.4 91.8,63.6" fill="none" stroke="currentColor" strokeWidth="0.5" opacity="0.4" />
                       </svg>
                       
-                      {/* 5个五行灵火节点 (金木水火土) */}
                       {[...Array(5)].map((_, i) => {
                         const active = stats.todayCount > i;
                         const isMax = stats.todayCount >= 5;
-                        const angle = i * 72; // 沿圆周均匀分布的五行方位
+                        const angle = i * 72;
                         const runes = ['金', '木', '水', '火', '土'];
                         
                         return (
@@ -308,7 +374,6 @@
                                     : 'bg-gradient-to-br from-cyan-100 to-cyan-400 text-cyan-950 shadow-[0_0_15px_rgba(34,211,238,0.8)] animate-spirit'
                                   : 'bg-[#040609] text-slate-600 border border-slate-700/80 shadow-[inset_0_0_5px_rgba(0,0,0,1)]'
                               }`} 
-                              // 抵消外层容器的旋转，保证符文文字永远垂直正立
                               style={{ transform: `rotate(-${angle}deg)` }}
                             >
                               {runes[i]}
@@ -317,7 +382,6 @@
                         );
                       })}
 
-                      {/* 阵眼核心 (太极结晶) */}
                       <div className="absolute inset-0 flex items-center justify-center z-20">
                         <div className={`w-10 h-10 rounded-full flex items-center justify-center backdrop-blur-sm transition-all duration-700 ${
                           stats.todayCount >= 5 
@@ -394,7 +458,7 @@
                     </div>
                     <div>
                       <label className="block text-[10px] uppercase font-mono tracking-widest text-gray-400 mb-1.5 flex justify-between items-center">
-                        <span>Solution (Markdown)</span>
+                        <span>Solution (Markdown / Math)</span>
                         <div className="flex gap-2">
                           <input type="file" accept=".md,.txt" ref={mdInputRef} onChange={handleMdImport} className="hidden" />
                           <input type="file" accept="image/*" ref={imgInputRef} onChange={handleImageInsert} className="hidden" />
@@ -406,7 +470,7 @@
                           </button>
                         </div>
                       </label>
-                      <textarea placeholder="在这里记录你的解题思路、转移方程或核心代码..." value={formData.solution} onChange={e => setFormData({...formData, solution: e.target.value})} className="w-full h-28 bg-black/50 border border-white/10 rounded-lg px-3 py-3 text-sm focus:outline-none focus:border-cyan-500 focus:ring-1 focus:ring-cyan-500/50 text-gray-300 placeholder-gray-600 font-mono transition-all resize-none custom-scrollbar leading-relaxed"/>
+                      <textarea placeholder="支持 $公式$ 和 Markdown 高亮..." value={formData.solution} onChange={e => setFormData({...formData, solution: e.target.value})} className="w-full h-28 bg-black/50 border border-white/10 rounded-lg px-3 py-3 text-sm focus:outline-none focus:border-cyan-500 focus:ring-1 focus:ring-cyan-500/50 text-gray-300 placeholder-gray-600 font-mono transition-all resize-none custom-scrollbar leading-relaxed"/>
                     </div>
                     <div>
                       <label className="block text-[10px] uppercase font-mono tracking-widest text-gray-400 mb-2">Status</label>
@@ -501,12 +565,9 @@
           {/* 全屏 Markdown 阅读器 Modal */}
           {selectedRecord && (
             <div className="fixed inset-0 z-50 flex flex-col animate-in fade-in zoom-in-95 duration-300 bg-black">
-              {/* 可更换的背景 */}
               <div className="absolute inset-0 bg-cover bg-center transition-all duration-700" style={{ backgroundImage: `url("${readerBg}")` }}></div>
-              {/* 暗化遮罩，确保前台文字高对比度可读 */}
               <div className="absolute inset-0 bg-[#07090e]/85 backdrop-blur-[4px]"></div>
               
-              {/* 顶部导航 */}
               <div className="relative z-10 flex items-center justify-between p-4 md:px-8 border-b border-cyan-500/30 bg-black/40 backdrop-blur-md shadow-lg">
                 <div className="flex items-center gap-4">
                   <div className="bg-black/50 p-2.5 rounded-xl border border-white/10 shadow-inner hidden md:block">
@@ -544,7 +605,6 @@
               {/* MD 渲染主内容区域 */}
               <div className="relative z-10 flex-1 overflow-y-auto custom-scrollbar p-4 md:p-8 lg:p-12">
                 <div className="max-w-5xl mx-auto bg-black/40 border border-cyan-500/20 rounded-2xl p-6 md:p-10 lg:p-14 shadow-[0_0_40px_rgba(0,0,0,0.6)] backdrop-blur-sm min-h-full">
-                  {/* Tags */}
                   {selectedRecord.tags && (
                     <div className="mb-8 flex flex-wrap gap-2 border-b border-white/10 pb-6">
                       <Tag className="w-4 h-4 text-cyan-500 mr-2 mt-0.5" />
@@ -556,11 +616,12 @@
                     </div>
                   )}
 
-                  {/* 经过安全消毒的 marked 渲染引擎输出 */}
+                  {/* DOM渲染区域 (安全消毒后的 Markdown + 晚绑定 KaTeX 解析) */}
                   {selectedRecord.solution ? (
                     <div 
+                      id="markdown-container"
                       className="markdown-body" 
-                      dangerouslySetInnerHTML={{ __html: DOMPurify.sanitize(marked.parse(selectedRecord.solution)) }} 
+                      dangerouslySetInnerHTML={{ __html: getRenderedMarkdown(selectedRecord.solution) }} 
                     />
                   ) : (
                     <div className="h-40 flex flex-col items-center justify-center text-gray-600 font-mono tracking-widest mt-10">
