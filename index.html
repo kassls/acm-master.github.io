@@ -616,19 +616,8 @@
                     </div>
                   )}
 
-                  {/* DOM渲染区域 (安全消毒后的 Markdown + 晚绑定 KaTeX 解析) */}
-                  {selectedRecord.solution ? (
-                    <div 
-                      id="markdown-container"
-                      className="markdown-body" 
-                      dangerouslySetInnerHTML={{ __html: getRenderedMarkdown(selectedRecord.solution) }} 
-                    />
-                  ) : (
-                    <div className="h-40 flex flex-col items-center justify-center text-gray-600 font-mono tracking-widest mt-10">
-                      <Terminal className="w-12 h-12 mb-4 opacity-20" />
-                      <p>[ SYSTEM.WARN: EMPTY_SOLUTION_DATA ]</p>
-                    </div>
-                  )}
+                  {/* 独立渲染组件 (安全消毒后的 Markdown + 晚绑定 KaTeX 与 HLJS 解析) */}
+                  <MarkdownViewer md={selectedRecord.solution} />
                 </div>
               </div>
             </div>
