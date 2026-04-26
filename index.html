@@ -1,648 +1,481 @@
-import React, { useState, useMemo, useRef, useEffect } from 'react';
-import { 
-  Code2, CheckCircle2, Clock, CalendarDays, Tag, Plus, 
-  Target, Trophy, Search, FileText, X, Terminal, Sparkles, Upload, ImageIcon
-} from 'lucide-react';
-
-// 初始化模拟数据（包含 Markdown 题解示例）
-const initialRecords = [
-  { 
-    id: '1', date: new Date().toISOString().split('T')[0], platform: 'Codeforces', problemId: '1945C', rating: 1400, tags: 'math, greedy', status: 'AC',
-    solution: '# 核心思路\n通过预处理前缀和，O(1) 判定左侧和右侧的 0/1 数量。\n\n## 复杂度\n- 时间: O(N)\n- 空间: O(N)\n\n> 贪心即可，注意中心点的取整逻辑。'
-  },
-  { 
-    id: '2', date: new Date().toISOString().split('T')[0], platform: 'AtCoder', problemId: 'ABC345-D', rating: 1200, tags: 'dp, bitmask', status: 'Upsolving',
-    solution: '典型的状压 DP。用一个整型变量表示当前网格的覆盖状态。\n\n```cpp\n// 转移方程核心\ndp[mask | new_mask] = true;\n```'
-  },
-  { 
-    id: '3', date: new Date(Date.now() - 86400000).toISOString().split('T')[0], platform: 'Luogu', problemId: 'P3372', rating: 1500, tags: 'segment tree', status: 'AC',
-    solution: '线段树模板题1。\n**易错点：**\n1. Lazy Tag 下传时，左右儿子的区间长度千万不能乘错。\n2. `build()` 的时候记得初始化 `tree[p]`。'
-  }
-];
-
-const PLATFORMS = ['Codeforces', 'AtCoder', 'Luogu', 'LeetCode', 'Vjudge', 'Other'];
-const STATUSES = ['AC', 'Upsolving', 'WA', 'TLE', 'MLE'];
-
-// 炫酷的数字滚动和爆光特效引擎
-const AnimatedNumber = ({ value, prefix = '' }) => {
-  const [displayValue, setDisplayValue] = useState(0);
-  const [isAnimating, setIsAnimating] = useState(true);
-
-  useEffect(() => {
-    let start = 0;
-    const end = parseInt(value) || 0;
-    if (start === end) {
-      setDisplayValue(value);
-      setIsAnimating(false);
-      return;
-    }
-    setIsAnimating(true);
-    const duration = 800; // 动画持续 800ms
-    const increment = end / (duration / 16);
-    const timer = setInterval(() => {
-      start += increment;
-      if (start >= end) {
-        clearInterval(timer);
-        setDisplayValue(value);
-        setTimeout(() => setIsAnimating(false), 400); // 延迟移除发光类名，完成爆点动画
-      } else {
-        setDisplayValue(Math.floor(start));
-      }
-    }, 16);
-    return () => clearInterval(timer);
-  }, [value]);
-
-  return (
-    <span className={`inline-block ${isAnimating ? 'animate-count-glow text-white' : 'text-white transition-all duration-500'}`}>
-      {prefix}{displayValue}
-    </span>
-  );
-};
-
-export default function App() {
-  const [records, setRecords] = useState(initialRecords);
-  const [searchQuery, setSearchQuery] = useState('');
-  const [selectedRecord, setSelectedRecord] = useState(null); 
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>CP Core Tracker</title>
   
-  const [formData, setFormData] = useState({
-    date: new Date().toISOString().split('T')[0],
-    platform: 'Codeforces',
-    problemId: '',
-    rating: '',
-    tags: '',
-    status: 'AC',
-    solution: ''
-  });
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
+</head>
+<body class="bg-[#07090e] text-gray-200">
+  <div id="root"></div>
 
-  // 文件上传 Refs 锚点
-  const mdInputRef = useRef(null);
-  const imgInputRef = useRef(null);
+  <script type="text/babel" data-type="module">
+    import React, { useState, useMemo, useRef, useEffect } from 'https://esm.sh/react@18.2.0';
+    import { createRoot } from 'https://esm.sh/react-dom@18.2.0/client';
+    import { 
+      Code2, CheckCircle2, Clock, CalendarDays, Tag, Plus, 
+      Target, Trophy, Search, FileText, X, Terminal, Sparkles, Upload, ImageIcon
+    } from 'https://esm.sh/lucide-react@0.263.1';
 
-  // 解析本地 Markdown 文件内容
-  const handleMdImport = (e) => {
-    const file = e.target.files[0];
-    if (!file) return;
-    const reader = new FileReader();
-    reader.onload = (event) => {
-      setFormData(prev => ({
-        ...prev, 
-        solution: prev.solution + (prev.solution ? '\n\n' : '') + event.target.result
-      }));
-    };
-    reader.readAsText(file);
-    e.target.value = null;
-  };
+    // 初始化模拟数据
+    const initialRecords = [
+      { 
+        id: '1', date: new Date().toISOString().split('T')[0], platform: 'Codeforces', problemId: '1945C', rating: 1400, tags: 'math, greedy', status: 'AC',
+        solution: '# 核心思路\n通过预处理前缀和，O(1) 判定左侧和右侧的 0/1 数量。\n\n## 复杂度\n- 时间: O(N)\n- 空间: O(N)\n\n> 贪心即可，注意中心点的取整逻辑。'
+      },
+      { 
+        id: '2', date: new Date().toISOString().split('T')[0], platform: 'AtCoder', problemId: 'ABC345-D', rating: 1200, tags: 'dp, bitmask', status: 'Upsolving',
+        solution: '典型的状压 DP。用一个整型变量表示当前网格的覆盖状态。\n\n```cpp\n// 转移方程核心\ndp[mask | new_mask] = true;\n```'
+      },
+      { 
+        id: '3', date: new Date(Date.now() - 86400000).toISOString().split('T')[0], platform: 'Luogu', problemId: 'P3372', rating: 1500, tags: 'segment tree', status: 'AC',
+        solution: '线段树模板题1。\n**易错点：**\n1. Lazy Tag 下传时，左右儿子的区间长度千万不能乘错。\n2. `build()` 的时候记得初始化 `tree[p]`。'
+      }
+    ];
 
-  // 将本地图片转换为 Base64 数据流并植入 Markdown
-  const handleImageInsert = (e) => {
-    const file = e.target.files[0];
-    if (!file) return;
-    const reader = new FileReader();
-    reader.onload = (event) => {
-      const base64 = event.target.result;
-      const imgMarkdown = `\n![本地图片](${base64})\n`;
-      setFormData(prev => ({...prev, solution: prev.solution + imgMarkdown}));
-    };
-    reader.readAsDataURL(file);
-    e.target.value = null;
-  };
+    const PLATFORMS = ['Codeforces', 'AtCoder', 'Luogu', 'LeetCode', 'Vjudge', 'Other'];
+    const STATUSES = ['AC', 'Upsolving', 'WA', 'TLE', 'MLE'];
 
-  // 核心统计指标计算
-  const stats = useMemo(() => {
-    const acCount = records.filter(r => r.status === 'AC').length;
-    const upsolvingCount = records.filter(r => r.status === 'Upsolving').length;
-    const today = new Date().toISOString().split('T')[0];
-    const todayCount = records.filter(r => r.date === today).length;
-    const maxRating = records.reduce((max, r) => {
-      const rVal = parseInt(r.rating);
-      return (!isNaN(rVal) && rVal > max) ? rVal : max;
-    }, 0);
-    return { acCount, upsolvingCount, todayCount, maxRating };
-  }, [records]);
+    const AnimatedNumber = ({ value, prefix = '' }) => {
+      const [displayValue, setDisplayValue] = useState(0);
+      const [isAnimating, setIsAnimating] = useState(true);
 
-  // 搜索过滤引擎
-  const filteredRecords = useMemo(() => {
-    if (!searchQuery.trim()) return records;
-    const query = searchQuery.toLowerCase();
-    return records.filter(r => 
-      r.problemId.toLowerCase().includes(query) ||
-      (r.tags && r.tags.toLowerCase().includes(query)) ||
-      r.platform.toLowerCase().includes(query)
-    );
-  }, [records, searchQuery]);
+      useEffect(() => {
+        let start = 0;
+        const end = parseInt(value) || 0;
+        if (start === end) {
+          setDisplayValue(value);
+          setIsAnimating(false);
+          return;
+        }
+        setIsAnimating(true);
+        const duration = 800; 
+        const increment = end / (duration / 16);
+        const timer = setInterval(() => {
+          start += increment;
+          if (start >= end) {
+            clearInterval(timer);
+            setDisplayValue(value);
+            setTimeout(() => setIsAnimating(false), 400); 
+          } else {
+            setDisplayValue(Math.floor(start));
+          }
+        }, 16);
+        return () => clearInterval(timer);
+      }, [value]);
 
-  // 表单提交流辑
-  const handleSubmit = (e) => {
-    e.preventDefault();
-    if (!formData.problemId) return;
-
-    const newRecord = {
-      ...formData,
-      id: Date.now().toString(),
-      rating: parseInt(formData.rating) || 0
+      return (
+        <span className={`inline-block ${isAnimating ? 'animate-count-glow text-white' : 'text-white transition-all duration-500'}`}>
+          {prefix}{displayValue}
+        </span>
+      );
     };
 
-    setRecords([newRecord, ...records]);
-    setFormData({ ...formData, problemId: '', rating: '', tags: '', solution: '' }); 
-  };
-
-  const getStatusColor = (status) => {
-    switch(status) {
-      case 'AC': return 'text-green-400 bg-green-400/10 border-green-400/30 shadow-[0_0_10px_rgba(74,222,128,0.2)]';
-      case 'Upsolving': return 'text-blue-400 bg-blue-400/10 border-blue-400/30 shadow-[0_0_10px_rgba(96,165,250,0.2)]';
-      case 'WA': return 'text-red-400 bg-red-400/10 border-red-400/30 shadow-[0_0_10px_rgba(248,113,113,0.2)]';
-      case 'TLE': return 'text-yellow-400 bg-yellow-400/10 border-yellow-400/30 shadow-[0_0_10px_rgba(250,204,21,0.2)]';
-      default: return 'text-gray-400 bg-gray-400/10 border-gray-400/30';
-    }
-  };
-
-  return (
-    <div className="min-h-screen bg-[#07090e] text-gray-200 font-sans relative overflow-hidden selection:bg-cyan-500/30">
+    const App = () => {
+      const [records, setRecords] = useState(initialRecords);
+      const [searchQuery, setSearchQuery] = useState('');
+      const [selectedRecord, setSelectedRecord] = useState(null); 
       
-      {/* 注入全局的自定义滚动条样式 (针对题解界面) 及全新特效动画 */}
-      <style dangerouslySetInnerHTML={{__html: `
-        @import url('https://fonts.googleapis.com/css2?family=Rajdhani:wght@500;700;900&family=Fira+Code:wght@400;600&display=swap');
-        .font-sci-fi { font-family: 'Rajdhani', sans-serif; }
+      const [formData, setFormData] = useState({
+        date: new Date().toISOString().split('T')[0],
+        platform: 'Codeforces',
+        problemId: '',
+        rating: '',
+        tags: '',
+        status: 'AC',
+        solution: ''
+      });
 
-        ::-webkit-scrollbar { width: 6px; height: 6px; }
-        ::-webkit-scrollbar-track { background: rgba(0, 0, 0, 0.2); border-radius: 10px; }
-        ::-webkit-scrollbar-thumb { background: rgba(6, 182, 212, 0.3); border-radius: 10px; }
-        ::-webkit-scrollbar-thumb:hover { background: rgba(6, 182, 212, 0.6); }
+      const mdInputRef = useRef(null);
+      const imgInputRef = useRef(null);
 
-        @keyframes count-up-glow {
-          0% { text-shadow: 0 0 0px rgba(6,182,212,0); transform: scale(1); filter: brightness(1); }
-          50% { text-shadow: 0 0 25px rgba(6,182,212,1); transform: scale(1.15); filter: brightness(1.5); }
-          100% { text-shadow: 0 0 10px rgba(6,182,212,0.5); transform: scale(1); filter: brightness(1); }
-        }
-        .animate-count-glow { 
-          animation: count-up-glow 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275) forwards; 
-        }
+      const handleMdImport = (e) => {
+        const file = e.target.files[0];
+        if (!file) return;
+        const reader = new FileReader();
+        reader.onload = (event) => {
+          setFormData(prev => ({
+            ...prev, 
+            solution: prev.solution + (prev.solution ? '\n\n' : '') + event.target.result
+          }));
+        };
+        reader.readAsText(file);
+        e.target.value = null;
+      };
 
-        /* === 能量槽动态流光 === */
-        @keyframes progress-stripes {
-          0% { background-position: 0 0; }
-          100% { background-position: 40px 0; }
-        }
-        @keyframes gradient-flow {
-          0% { background-position: 0% 50%; }
-          50% { background-position: 100% 50%; }
-          100% { background-position: 0% 50%; }
-        }
-        .energy-bar-stripes {
-          background-image: linear-gradient(45deg, rgba(255,255,255,0.2) 25%, transparent 25%, transparent 50%, rgba(255,255,255,0.2) 50%, rgba(255,255,255,0.2) 75%, transparent 75%, transparent);
-          background-size: 40px 40px;
-          animation: progress-stripes 1s linear infinite;
-        }
-        .bg-ascended-flow {
-          background: linear-gradient(90deg, #d946ef, #8b5cf6, #06b6d4, #f59e0b, #d946ef);
-          background-size: 300% 100%;
-          animation: gradient-flow 3s ease infinite;
-        }
-      `}} />
+      const handleImageInsert = (e) => {
+        const file = e.target.files[0];
+        if (!file) return;
+        const reader = new FileReader();
+        reader.onload = (event) => {
+          const base64 = event.target.result;
+          const imgMarkdown = `\n![本地图片](${base64})\n`;
+          setFormData(prev => ({...prev, solution: prev.solution + imgMarkdown}));
+        };
+        reader.readAsDataURL(file);
+        e.target.value = null;
+      };
 
-      {/* 赛博朋克光晕背景 */}
-      <div className="absolute top-[-15%] left-[-10%] w-[50%] h-[50%] bg-cyan-600/10 rounded-full blur-[150px] pointer-events-none"></div>
-      <div className="absolute bottom-[-15%] right-[-10%] w-[50%] h-[50%] bg-purple-600/10 rounded-full blur-[150px] pointer-events-none"></div>
-      
-      <div className="max-w-7xl mx-auto space-y-6 p-4 sm:p-6 md:p-8 relative z-10">
-        
-        {/* Header */}
-        <header className="flex flex-col md:flex-row items-start md:items-center justify-between border-b border-white/5 pb-4 gap-4">
-          <div className="flex items-center gap-4">
-            <div className="p-3 bg-gradient-to-br from-cyan-500/20 to-purple-500/20 rounded-xl border border-cyan-500/30 shadow-[0_0_20px_rgba(6,182,212,0.3)] backdrop-blur-md">
-              <Terminal className="w-8 h-8 text-cyan-400 drop-shadow-[0_0_8px_currentColor]" />
-            </div>
-            <div>
-              <h1 className="text-3xl font-black tracking-tight text-transparent bg-clip-text bg-gradient-to-r from-cyan-400 to-purple-400 drop-shadow-[0_0_10px_rgba(34,211,238,0.2)]">
-                CP Core Tracker
-              </h1>
-              <p className="text-sm text-cyan-500/70 font-mono mt-1 flex items-center gap-1.5 uppercase tracking-widest">
-                <Sparkles className="w-3.5 h-3.5" /> High-Performance ACM Console
-              </p>
-            </div>
-          </div>
-          <div className="text-left md:text-right font-mono">
-            <p className="text-sm font-bold text-gray-300 drop-shadow-md">{new Date().toLocaleDateString('zh-CN', { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' })}</p>
-            <p className="text-[10px] text-purple-400/80 mt-1 uppercase tracking-widest border border-purple-500/30 bg-purple-500/10 px-2 py-0.5 rounded-full inline-block">SYSTEM: NEON ACTIVE</p>
-          </div>
-        </header>
+      const stats = useMemo(() => {
+        const acCount = records.filter(r => r.status === 'AC').length;
+        const upsolvingCount = records.filter(r => r.status === 'Upsolving').length;
+        const today = new Date().toISOString().split('T')[0];
+        const todayCount = records.filter(r => r.date === today).length;
+        const maxRating = records.reduce((max, r) => {
+          const rVal = parseInt(r.rating);
+          return (!isNaN(rVal) && rVal > max) ? rVal : max;
+        }, 0);
+        return { acCount, upsolvingCount, todayCount, maxRating };
+      }, [records]);
 
-        {/* HUD Statistics Dashboard - 极致独立核心能量舱 */}
-        <div className="space-y-4">
+      const filteredRecords = useMemo(() => {
+        if (!searchQuery.trim()) return records;
+        const query = searchQuery.toLowerCase();
+        return records.filter(r => 
+          r.problemId.toLowerCase().includes(query) ||
+          (r.tags && r.tags.toLowerCase().includes(query)) ||
+          r.platform.toLowerCase().includes(query)
+        );
+      }, [records, searchQuery]);
+
+      const handleSubmit = (e) => {
+        e.preventDefault();
+        if (!formData.problemId) return;
+        const newRecord = { ...formData, id: Date.now().toString(), rating: parseInt(formData.rating) || 0 };
+        setRecords([newRecord, ...records]);
+        setFormData({ ...formData, problemId: '', rating: '', tags: '', solution: '' }); 
+      };
+
+      const getStatusColor = (status) => {
+        switch(status) {
+          case 'AC': return 'text-green-400 bg-green-400/10 border-green-400/30 shadow-[0_0_10px_rgba(74,222,128,0.2)]';
+          case 'Upsolving': return 'text-blue-400 bg-blue-400/10 border-blue-400/30 shadow-[0_0_10px_rgba(96,165,250,0.2)]';
+          case 'WA': return 'text-red-400 bg-red-400/10 border-red-400/30 shadow-[0_0_10px_rgba(248,113,113,0.2)]';
+          case 'TLE': return 'text-yellow-400 bg-yellow-400/10 border-yellow-400/30 shadow-[0_0_10px_rgba(250,204,21,0.2)]';
+          default: return 'text-gray-400 bg-gray-400/10 border-gray-400/30';
+        }
+      };
+
+      return (
+        <div className="min-h-screen bg-[#07090e] text-gray-200 font-sans relative overflow-hidden selection:bg-cyan-500/30">
+          <style dangerouslySetInnerHTML={{__html: `
+            @import url('https://fonts.googleapis.com/css2?family=Rajdhani:wght@500;700;900&family=Fira+Code:wght@400;600&display=swap');
+            .font-sci-fi { font-family: 'Rajdhani', sans-serif; }
+            ::-webkit-scrollbar { width: 6px; height: 6px; }
+            ::-webkit-scrollbar-track { background: rgba(0, 0, 0, 0.2); border-radius: 10px; }
+            ::-webkit-scrollbar-thumb { background: rgba(6, 182, 212, 0.3); border-radius: 10px; }
+            ::-webkit-scrollbar-thumb:hover { background: rgba(6, 182, 212, 0.6); }
+            @keyframes count-up-glow {
+              0% { text-shadow: 0 0 0px rgba(6,182,212,0); transform: scale(1); filter: brightness(1); }
+              50% { text-shadow: 0 0 25px rgba(6,182,212,1); transform: scale(1.15); filter: brightness(1.5); }
+              100% { text-shadow: 0 0 10px rgba(6,182,212,0.5); transform: scale(1); filter: brightness(1); }
+            }
+            .animate-count-glow { animation: count-up-glow 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275) forwards; }
+            @keyframes progress-stripes { 0% { background-position: 0 0; } 100% { background-position: 40px 0; } }
+            @keyframes gradient-flow { 0% { background-position: 0% 50%; } 50% { background-position: 100% 50%; } 100% { background-position: 0% 50%; } }
+            .energy-bar-stripes { background-image: linear-gradient(45deg, rgba(255,255,255,0.2) 25%, transparent 25%, transparent 50%, rgba(255,255,255,0.2) 50%, rgba(255,255,255,0.2) 75%, transparent 75%, transparent); background-size: 40px 40px; animation: progress-stripes 1s linear infinite; }
+            .bg-ascended-flow { background: linear-gradient(90deg, #d946ef, #8b5cf6, #06b6d4, #f59e0b, #d946ef); background-size: 300% 100%; animation: gradient-flow 3s ease infinite; }
+          `}} />
+
+          <div className="absolute top-[-15%] left-[-10%] w-[50%] h-[50%] bg-cyan-600/10 rounded-full blur-[150px] pointer-events-none"></div>
+          <div className="absolute bottom-[-15%] right-[-10%] w-[50%] h-[50%] bg-purple-600/10 rounded-full blur-[150px] pointer-events-none"></div>
           
-          {/* 独立的巨型进度能量条 (DAILY SOLVED OVERRIDE) */}
-          <div className="relative w-full bg-[#040609]/90 backdrop-blur-2xl border-2 border-cyan-500/40 rounded-2xl p-6 md:p-8 shadow-[0_0_40px_rgba(6,182,212,0.15)] overflow-hidden group">
-            {/* 扫描线背景特效 */}
-            <div className="absolute inset-0 w-full h-[200%] bg-gradient-to-b from-transparent via-cyan-500/5 to-transparent animate-[scan-line_4s_linear_infinite] pointer-events-none"></div>
-            
-            <div className="flex flex-col md:flex-row items-start md:items-center justify-between gap-8 relative z-10">
-              {/* 左侧模块：标题与巨大的数值 */}
-              <div className="flex items-center gap-5">
-                <div className="p-4 bg-cyan-900/40 border border-cyan-500/50 rounded-xl shadow-[0_0_25px_rgba(6,182,212,0.3)]">
-                  <Target className="w-10 h-10 text-cyan-400 drop-shadow-[0_0_15px_currentColor]" />
+          <div className="max-w-7xl mx-auto space-y-6 p-4 sm:p-6 md:p-8 relative z-10">
+            <header className="flex flex-col md:flex-row items-start md:items-center justify-between border-b border-white/5 pb-4 gap-4">
+              <div className="flex items-center gap-4">
+                <div className="p-3 bg-gradient-to-br from-cyan-500/20 to-purple-500/20 rounded-xl border border-cyan-500/30 shadow-[0_0_20px_rgba(6,182,212,0.3)] backdrop-blur-md">
+                  <Terminal className="w-8 h-8 text-cyan-400 drop-shadow-[0_0_8px_currentColor]" />
                 </div>
                 <div>
-                  <p className="text-xs text-cyan-500/80 uppercase tracking-[0.3em] font-black mb-1 font-mono flex items-center gap-2">
-                    <span className="w-2 h-2 rounded-full bg-cyan-400 animate-pulse shadow-[0_0_10px_rgba(34,211,238,1)]"></span>
-                    CORE OVERRIDE / 核心攻克
+                  <h1 className="text-3xl font-black tracking-tight text-transparent bg-clip-text bg-gradient-to-r from-cyan-400 to-purple-400 drop-shadow-[0_0_10px_rgba(34,211,238,0.2)]">
+                    CP Core Tracker
+                  </h1>
+                  <p className="text-sm text-cyan-500/70 font-mono mt-1 flex items-center gap-1.5 uppercase tracking-widest">
+                    <Sparkles className="w-3.5 h-3.5" /> High-Performance ACM Console
                   </p>
-                  <div className="flex items-baseline gap-3 mt-1">
-                    <p className="text-6xl font-black text-transparent bg-clip-text bg-gradient-to-r from-cyan-300 to-white drop-shadow-[0_0_15px_rgba(6,182,212,0.6)]">
-                      <AnimatedNumber value={stats.todayCount} />
-                    </p>
-                    <span className="text-sm text-cyan-500/60 font-mono tracking-widest font-bold">/ 5 STAGE GOAL</span>
-                  </div>
                 </div>
               </div>
-
-              {/* 右侧模块：能量槽动态流光 (替换为连续斜纹) */}
-              <div className="w-full md:w-[400px] flex flex-col gap-2 justify-center md:ml-6">
-                <div className="flex justify-between text-xs font-sci-fi font-bold tracking-[0.15em] text-slate-400 uppercase">
-                  <span>Energy Power</span>
-                  <span className={stats.todayCount >= 5 ? 'text-fuchsia-400 drop-shadow-[0_0_8px_currentColor]' : 'text-cyan-400 drop-shadow-[0_0_8px_currentColor]'}>
-                    Target: 5
-                  </span>
-                </div>
-                <div className="w-full h-8 bg-black/30 backdrop-blur-md border border-slate-700 p-1" style={{ transform: 'skewX(-15deg)' }}>
-                  <div 
-                    className={`h-full transition-all duration-1000 ease-out energy-bar-stripes ${stats.todayCount >= 5 ? 'bg-ascended-flow shadow-[0_0_25px_#d946ef]' : 'bg-gradient-to-r from-cyan-800 to-cyan-400 shadow-[0_0_15px_#06b6d4]'}`}
-                    style={{ width: `${Math.min((stats.todayCount / 5) * 100, 100)}%` }}
-                  ></div>
-                </div>
+              <div className="text-left md:text-right font-mono">
+                <p className="text-sm font-bold text-gray-300 drop-shadow-md">{new Date().toLocaleDateString('zh-CN', { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' })}</p>
+                <p className="text-[10px] text-purple-400/80 mt-1 uppercase tracking-widest border border-purple-500/30 bg-purple-500/10 px-2 py-0.5 rounded-full inline-block">SYSTEM: NEON ACTIVE</p>
               </div>
-            </div>
-          </div>
+            </header>
 
-          {/* 附属的三个子系统指标 */}
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-            <div className="bg-white/5 backdrop-blur-xl border border-white/10 rounded-2xl p-5 flex items-center gap-4 hover:border-green-500/50 transition-all duration-300 shadow-[0_8px_30px_rgb(0,0,0,0.5)] hover:shadow-[0_0_25px_rgba(74,222,128,0.2)] group">
-              <div className="p-3 bg-green-500/20 rounded-xl group-hover:scale-110 transition-transform"><CheckCircle2 className="w-7 h-7 text-green-400 drop-shadow-[0_0_10px_currentColor]" /></div>
-              <div>
-                <p className="text-[10px] text-gray-400 uppercase tracking-widest font-bold mb-1 font-mono">TOTAL AC / 累计斩获</p>
-                <p className="text-3xl font-black text-white"><AnimatedNumber value={stats.acCount} /></p>
-              </div>
-            </div>
-            <div className="bg-white/5 backdrop-blur-xl border border-white/10 rounded-2xl p-5 flex items-center gap-4 hover:border-blue-500/50 transition-all duration-300 shadow-[0_8px_30px_rgb(0,0,0,0.5)] hover:shadow-[0_0_25px_rgba(96,165,250,0.2)] group">
-              <div className="p-3 bg-blue-500/20 rounded-xl group-hover:scale-110 transition-transform"><Clock className="w-7 h-7 text-blue-400 drop-shadow-[0_0_10px_currentColor]" /></div>
-              <div>
-                <p className="text-[10px] text-gray-400 uppercase tracking-widest font-bold mb-1 font-mono">UPSOLVE / 技术债</p>
-                <p className="text-3xl font-black text-white"><AnimatedNumber value={stats.upsolvingCount} /></p>
-              </div>
-            </div>
-            <div className="bg-white/5 backdrop-blur-xl border border-white/10 rounded-2xl p-5 flex items-center gap-4 hover:border-amber-500/50 transition-all duration-300 shadow-[0_8px_30px_rgb(0,0,0,0.5)] hover:shadow-[0_0_25px_rgba(251,191,36,0.2)] group">
-              <div className="p-3 bg-amber-500/20 rounded-xl group-hover:scale-110 transition-transform"><Trophy className="w-7 h-7 text-amber-400 drop-shadow-[0_0_10px_currentColor]" /></div>
-              <div>
-                <p className="text-[10px] text-gray-400 uppercase tracking-widest font-bold mb-1 font-mono">PEAK RATING / 战力峰值</p>
-                <p className="text-3xl font-black text-transparent bg-clip-text bg-gradient-to-r from-amber-300 to-orange-500 drop-shadow-md"><AnimatedNumber value={stats.maxRating} /></p>
-              </div>
-            </div>
-          </div>
-        </div>
-
-        <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-          
-          {/* Left Column: Form Submitter */}
-          <div className="lg:col-span-1 space-y-6">
-            <div className="bg-[#0b0e14]/80 backdrop-blur-2xl border border-white/10 rounded-2xl p-6 shadow-2xl relative overflow-hidden group">
-              <div className="absolute top-0 left-0 w-full h-[2px] bg-gradient-to-r from-transparent via-cyan-500 to-transparent opacity-50 group-hover:opacity-100 transition-opacity duration-500"></div>
-              
-              <h2 className="text-lg font-black text-white mb-6 flex items-center gap-2 uppercase tracking-wide">
-                <Plus className="w-5 h-5 text-cyan-400 drop-shadow-[0_0_8px_currentColor]" />
-                Inject Node / 节点录入
-              </h2>
-              
-              <form onSubmit={handleSubmit} className="space-y-5">
-                <div className="grid grid-cols-2 gap-4">
-                  <div>
-                    <label className="block text-[10px] uppercase font-mono tracking-widest text-gray-400 mb-1.5">Date</label>
-                    <input 
-                      type="date" 
-                      value={formData.date}
-                      onChange={e => setFormData({...formData, date: e.target.value})}
-                      className="w-full bg-black/50 border border-white/10 rounded-lg px-3 py-2 text-sm focus:outline-none focus:border-cyan-500 focus:ring-1 focus:ring-cyan-500/50 text-gray-200 transition-all"
-                    />
-                  </div>
-                  <div>
-                    <label className="block text-[10px] uppercase font-mono tracking-widest text-gray-400 mb-1.5">Platform</label>
-                    <select 
-                      value={formData.platform}
-                      onChange={e => setFormData({...formData, platform: e.target.value})}
-                      className="w-full bg-black/50 border border-white/10 rounded-lg px-3 py-2 text-sm focus:outline-none focus:border-cyan-500 focus:ring-1 focus:ring-cyan-500/50 text-gray-200 transition-all appearance-none"
-                    >
-                      {PLATFORMS.map(p => <option key={p} value={p}>{p}</option>)}
-                    </select>
-                  </div>
-                </div>
-
-                <div>
-                  <label className="block text-[10px] uppercase font-mono tracking-widest text-gray-400 mb-1.5">Problem ID <span className="text-red-400">*</span></label>
-                  <input 
-                    type="text" 
-                    required
-                    placeholder="e.g. 1945C / ABC345-D"
-                    value={formData.problemId}
-                    onChange={e => setFormData({...formData, problemId: e.target.value})}
-                    className="w-full bg-black/50 border border-white/10 rounded-lg px-3 py-2.5 text-sm focus:outline-none focus:border-cyan-500 focus:ring-1 focus:ring-cyan-500/50 text-cyan-100 placeholder-gray-600 transition-all font-mono"
-                  />
-                </div>
-
-                <div>
-                  <label className="block text-[10px] uppercase font-mono tracking-widest text-gray-400 mb-1.5">Difficulty / Rating</label>
-                  <input 
-                    type="number" 
-                    placeholder="e.g. 1400"
-                    value={formData.rating}
-                    onChange={e => setFormData({...formData, rating: e.target.value})}
-                    className="w-full bg-black/50 border border-white/10 rounded-lg px-3 py-2.5 text-sm focus:outline-none focus:border-cyan-500 focus:ring-1 focus:ring-cyan-500/50 text-purple-200 placeholder-gray-600 transition-all font-mono"
-                  />
-                </div>
-
-                <div>
-                  <label className="block text-[10px] uppercase font-mono tracking-widest text-gray-400 mb-1.5">Tags</label>
-                  <input 
-                    type="text" 
-                    placeholder="e.g. dp, math, greedy"
-                    value={formData.tags}
-                    onChange={e => setFormData({...formData, tags: e.target.value})}
-                    className="w-full bg-black/50 border border-white/10 rounded-lg px-3 py-2.5 text-sm focus:outline-none focus:border-cyan-500 focus:ring-1 focus:ring-cyan-500/50 text-cyan-300 placeholder-gray-600 transition-all font-mono"
-                  />
-                </div>
-
-                <div>
-                  <label className="block text-[10px] uppercase font-mono tracking-widest text-gray-400 mb-1.5 flex justify-between items-center">
-                    <span>Solution (Markdown)</span>
-                    <div className="flex gap-2">
-                      <input type="file" accept=".md,.txt" ref={mdInputRef} onChange={handleMdImport} className="hidden" />
-                      <input type="file" accept="image/*" ref={imgInputRef} onChange={handleImageInsert} className="hidden" />
-                      
-                      <button type="button" onClick={() => mdInputRef.current?.click()} className="flex items-center gap-1 text-[9px] bg-cyan-900/30 hover:bg-cyan-500/30 text-cyan-400 px-2 py-1 rounded border border-cyan-500/30 transition-colors shadow-[0_0_8px_rgba(6,182,212,0.1)] hover:shadow-[0_0_12px_rgba(6,182,212,0.4)]">
-                        <Upload className="w-3 h-3" /> 导入 .MD
-                      </button>
-                      <button type="button" onClick={() => imgInputRef.current?.click()} className="flex items-center gap-1 text-[9px] bg-purple-900/30 hover:bg-purple-500/30 text-purple-400 px-2 py-1 rounded border border-purple-500/30 transition-colors shadow-[0_0_8px_rgba(168,85,247,0.1)] hover:shadow-[0_0_12px_rgba(168,85,247,0.4)]">
-                        <ImageIcon className="w-3 h-3" /> 贴图
-                      </button>
+            <div className="space-y-4">
+              <div className="relative w-full bg-[#040609]/90 backdrop-blur-2xl border-2 border-cyan-500/40 rounded-2xl p-6 md:p-8 shadow-[0_0_40px_rgba(6,182,212,0.15)] overflow-hidden group">
+                <div className="absolute inset-0 w-full h-[200%] bg-gradient-to-b from-transparent via-cyan-500/5 to-transparent animate-[scan-line_4s_linear_infinite] pointer-events-none"></div>
+                <div className="flex flex-col md:flex-row items-start md:items-center justify-between gap-8 relative z-10">
+                  <div className="flex items-center gap-5">
+                    <div className="p-4 bg-cyan-900/40 border border-cyan-500/50 rounded-xl shadow-[0_0_25px_rgba(6,182,212,0.3)]">
+                      <Target className="w-10 h-10 text-cyan-400 drop-shadow-[0_0_15px_currentColor]" />
                     </div>
-                  </label>
-                  <textarea
-                    placeholder="在这里记录你的解题思路、转移方程或核心代码..."
-                    value={formData.solution}
-                    onChange={e => setFormData({...formData, solution: e.target.value})}
-                    className="w-full h-28 bg-black/50 border border-white/10 rounded-lg px-3 py-3 text-sm focus:outline-none focus:border-cyan-500 focus:ring-1 focus:ring-cyan-500/50 text-gray-300 placeholder-gray-600 font-mono transition-all resize-none custom-scrollbar leading-relaxed"
-                  />
-                </div>
-
-                <div>
-                  <label className="block text-[10px] uppercase font-mono tracking-widest text-gray-400 mb-2">Status</label>
-                  <div className="grid grid-cols-3 gap-2">
-                    {STATUSES.map(s => (
-                      <button
-                        key={s}
-                        type="button"
-                        onClick={() => setFormData({...formData, status: s})}
-                        className={`py-2 text-xs font-bold rounded-lg border transition-all duration-300 font-mono ${
-                          formData.status === s 
-                            ? `${getStatusColor(s)}`
-                            : 'bg-black/30 border-white/5 text-gray-500 hover:border-gray-600 hover:bg-white/5'
-                        }`}
-                      >
-                        {s}
-                      </button>
-                    ))}
+                    <div>
+                      <p className="text-xs text-cyan-500/80 uppercase tracking-[0.3em] font-black mb-1 font-mono flex items-center gap-2">
+                        <span className="w-2 h-2 rounded-full bg-cyan-400 animate-pulse shadow-[0_0_10px_rgba(34,211,238,1)]"></span>
+                        CORE OVERRIDE / 核心攻克
+                      </p>
+                      <div className="flex items-baseline gap-3 mt-1">
+                        <p className="text-6xl font-black text-transparent bg-clip-text bg-gradient-to-r from-cyan-300 to-white drop-shadow-[0_0_15px_rgba(6,182,212,0.6)]">
+                          <AnimatedNumber value={stats.todayCount} />
+                        </p>
+                        <span className="text-sm text-cyan-500/60 font-mono tracking-widest font-bold">/ 5 STAGE GOAL</span>
+                      </div>
+                    </div>
                   </div>
-                </div>
-
-                <button 
-                  type="submit"
-                  className="w-full relative overflow-hidden group bg-cyan-600/20 border border-cyan-500/50 hover:bg-cyan-500 text-cyan-400 hover:text-white font-black py-3.5 rounded-lg transition-all duration-300 shadow-[0_0_15px_rgba(6,182,212,0.2)] hover:shadow-[0_0_30px_rgba(6,182,212,0.6)] mt-2 active:scale-[0.98]"
-                >
-                  <span className="relative z-10 flex items-center justify-center gap-2 tracking-widest uppercase text-sm">
-                    Commit Record
-                  </span>
-                </button>
-              </form>
-            </div>
-          </div>
-
-          {/* Right Column: Search & Data Flow */}
-          <div className="lg:col-span-2 flex flex-col gap-6">
-            
-            {/* Search Module */}
-            <div className="bg-[#0b0e14]/80 backdrop-blur-xl border border-white/10 rounded-2xl p-2 pl-4 flex items-center gap-3 shadow-lg focus-within:border-cyan-500/50 focus-within:shadow-[0_0_20px_rgba(6,182,212,0.15)] transition-all">
-              <Search className="w-5 h-5 text-cyan-500/70" />
-              <input
-                type="text"
-                placeholder="Query by Problem, Tags, Platform..."
-                value={searchQuery}
-                onChange={(e) => setSearchQuery(e.target.value)}
-                className="bg-transparent border-none focus:outline-none text-white font-mono w-full placeholder-gray-600 text-sm"
-              />
-              {searchQuery && (
-                <div className="pr-2 flex items-center gap-2">
-                  <span className="text-[10px] font-mono font-bold bg-cyan-500/20 text-cyan-300 px-2.5 py-1 rounded border border-cyan-500/30 whitespace-nowrap uppercase tracking-wider">
-                    {filteredRecords.length} Match
-                  </span>
-                  <button onClick={() => setSearchQuery('')} className="p-1 text-gray-500 hover:text-white transition-colors">
-                    <X className="w-4 h-4" />
-                  </button>
-                </div>
-              )}
-            </div>
-
-            {/* Terminal View Table */}
-            <div className="bg-[#0b0e14]/80 backdrop-blur-xl border border-white/10 rounded-2xl overflow-hidden flex-1 shadow-2xl relative flex flex-col">
-              <div className="p-4 border-b border-white/5 flex justify-between items-center bg-black/40">
-                <h2 className="text-[13px] uppercase tracking-widest font-black font-mono text-gray-300 flex items-center gap-2">
-                  <CalendarDays className="w-4 h-4 text-purple-400" />
-                  Data Stream Log
-                </h2>
-              </div>
-              
-              <div className="overflow-x-auto flex-1 custom-scrollbar">
-                <table className="w-full text-left text-sm whitespace-nowrap">
-                  <thead className="bg-black/60 text-cyan-500/60 text-[10px] font-mono uppercase tracking-[0.2em]">
-                    <tr>
-                      <th className="px-5 py-4 font-normal">Timestamp</th>
-                      <th className="px-5 py-4 font-normal">Entity</th>
-                      <th className="px-5 py-4 font-normal">Rating</th>
-                      <th className="px-5 py-4 font-normal">Tags</th>
-                      <th className="px-5 py-4 font-normal">Status</th>
-                      <th className="px-5 py-4 text-center font-normal">Solution</th>
-                    </tr>
-                  </thead>
-                  <tbody className="divide-y divide-white/5">
-                    {filteredRecords.length === 0 ? (
-                      <tr>
-                        <td colSpan="6" className="px-5 py-24 text-center">
-                          <p className="text-gray-500 font-mono tracking-widest uppercase">[ 0 Data Blocks Found ]</p>
-                        </td>
-                      </tr>
-                    ) : (
-                      filteredRecords.map(record => (
-                        <tr key={record.id} className="hover:bg-white/5 transition-colors group">
-                          <td className="px-5 py-4 text-gray-500 font-mono text-xs">{record.date}</td>
-                          <td className="px-5 py-4">
-                            <div className="flex flex-col">
-                              <span className="font-bold text-gray-200 group-hover:text-cyan-300 transition-colors tracking-wide">{record.problemId}</span>
-                              <span className="text-[10px] text-gray-500 font-mono mt-0.5">{record.platform}</span>
-                            </div>
-                          </td>
-                          <td className="px-5 py-4">
-                            <span className={`px-2 py-0.5 rounded text-xs font-bold font-mono border ${
-                              record.rating >= 2000 ? 'bg-red-500/10 text-red-400 border-red-500/30 shadow-[0_0_8px_rgba(239,68,68,0.2)]' : 
-                              record.rating >= 1600 ? 'bg-purple-500/10 text-purple-400 border-purple-500/30 shadow-[0_0_8px_rgba(168,85,247,0.2)]' : 
-                              record.rating >= 1200 ? 'bg-cyan-500/10 text-cyan-400 border-cyan-500/30' : 'bg-gray-800 border-gray-700 text-gray-300'
-                            }`}>
-                              {record.rating ? `R-${record.rating}` : 'N/A'}
-                            </span>
-                          </td>
-                          <td className="px-5 py-4">
-                            <div className="flex flex-wrap gap-1.5 max-w-[200px] whitespace-normal">
-                              {record.tags ? record.tags.split(',').map((tag, i) => (
-                                <span key={i} className="px-1.5 py-0.5 bg-cyan-900/10 border border-cyan-500/20 rounded text-[10px] text-cyan-300/80 font-mono uppercase tracking-wider">
-                                  {tag.trim()}
-                                </span>
-                              )) : <span className="text-gray-600 text-xs">-</span>}
-                            </div>
-                          </td>
-                          <td className="px-5 py-4">
-                            <span className={`px-2 py-1 border rounded text-[10px] uppercase font-black tracking-widest font-mono ${getStatusColor(record.status)}`}>
-                              {record.status}
-                            </span>
-                          </td>
-                          <td className="px-5 py-4 text-center">
-                            <button
-                              onClick={() => setSelectedRecord(record)}
-                              className={`inline-flex items-center justify-center p-2 rounded-xl transition-all duration-300 ${
-                                record.solution 
-                                ? 'bg-purple-500/10 text-purple-400 hover:bg-purple-500/30 hover:text-purple-200 border border-purple-500/30 hover:shadow-[0_0_15px_rgba(168,85,247,0.4)]' 
-                                : 'bg-white/5 text-gray-500 hover:bg-white/10 hover:text-gray-300 border border-transparent'
-                              }`}
-                              title={record.solution ? "查看题解" : "无题解内容"}
-                            >
-                              <FileText className="w-4 h-4" />
-                            </button>
-                          </td>
-                        </tr>
-                      ))
-                    )}
-                  </tbody>
-                </table>
-              </div>
-            </div>
-          </div>
-        </div>
-      </div>
-
-      {/* 沉浸式题解面板 (The Immersive Modal) */}
-      {selectedRecord && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 sm:p-6 md:p-12 animate-in fade-in zoom-in-95 duration-300">
-          
-          {/* 超高清暗黑赛博朋克背景图 & 毛玻璃层 */}
-          <div 
-            className="absolute inset-0 bg-cover bg-center brightness-[0.3] contrast-125 transition-all duration-700"
-            style={{ backgroundImage: 'url("https://images.unsplash.com/photo-1614729939124-032f0b56c9ce?q=80&w=2000&auto=format&fit=crop")' }}
-          ></div>
-          <div className="absolute inset-0 bg-black/40 backdrop-blur-md"></div>
-          
-          {/* Main Modal Card */}
-          <div className="relative w-full max-w-4xl max-h-full bg-[#0a0a0f]/80 backdrop-blur-2xl border border-cyan-500/30 rounded-2xl shadow-[0_0_50px_rgba(6,182,212,0.15)] flex flex-col overflow-hidden ring-1 ring-white/10">
-            
-            {/* Header / Top Bar */}
-            <div className="flex items-start md:items-center justify-between p-6 border-b border-white/10 bg-gradient-to-r from-cyan-900/30 to-transparent">
-              <div className="flex items-start gap-4">
-                <div className="bg-black/50 p-2.5 rounded-xl border border-white/10 shadow-inner">
-                  <Code2 className="w-6 h-6 text-cyan-400 drop-shadow-[0_0_8px_currentColor]" />
-                </div>
-                <div>
-                  <h3 className="text-2xl font-black text-white tracking-wide drop-shadow-md">
-                    {selectedRecord.platform} - {selectedRecord.problemId}
-                  </h3>
-                  <div className="flex flex-wrap items-center gap-3 mt-2 text-[10px] font-mono uppercase tracking-widest text-gray-400">
-                    <span className="flex items-center gap-1 bg-black/30 px-2 py-1 rounded border border-white/5">
-                      <CalendarDays className="w-3 h-3" /> {selectedRecord.date}
-                    </span>
-                    <span className={`px-2 py-1 rounded border ${getStatusColor(selectedRecord.status)}`}>
-                      {selectedRecord.status}
-                    </span>
-                    {selectedRecord.rating && (
-                      <span className="text-amber-400 border border-amber-400/30 px-2 py-1 rounded bg-amber-400/10 drop-shadow-[0_0_5px_rgba(251,191,36,0.3)]">
-                        RATING: {selectedRecord.rating}
+                  <div className="w-full md:w-[400px] flex flex-col gap-2 justify-center md:ml-6">
+                    <div className="flex justify-between text-xs font-sci-fi font-bold tracking-[0.15em] text-slate-400 uppercase">
+                      <span>Energy Power</span>
+                      <span className={stats.todayCount >= 5 ? 'text-fuchsia-400 drop-shadow-[0_0_8px_currentColor]' : 'text-cyan-400 drop-shadow-[0_0_8px_currentColor]'}>
+                        Target: 5
                       </span>
-                    )}
+                    </div>
+                    <div className="w-full h-8 bg-black/30 backdrop-blur-md border border-slate-700 p-1" style={{ transform: 'skewX(-15deg)' }}>
+                      <div className={`h-full transition-all duration-1000 ease-out energy-bar-stripes ${stats.todayCount >= 5 ? 'bg-ascended-flow shadow-[0_0_25px_#d946ef]' : 'bg-gradient-to-r from-cyan-800 to-cyan-400 shadow-[0_0_15px_#06b6d4]'}`} style={{ width: `${Math.min((stats.todayCount / 5) * 100, 100)}%` }}></div>
+                    </div>
                   </div>
                 </div>
               </div>
-              <button 
-                onClick={() => setSelectedRecord(null)}
-                className="p-2.5 text-gray-500 hover:text-white hover:bg-white/10 rounded-xl transition-all bg-black/30 border border-white/5 hover:border-white/20"
-              >
-                <X className="w-5 h-5" />
-              </button>
+
+              <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                <div className="bg-white/5 backdrop-blur-xl border border-white/10 rounded-2xl p-5 flex items-center gap-4 hover:border-green-500/50 transition-all duration-300 shadow-[0_8px_30px_rgb(0,0,0,0.5)] hover:shadow-[0_0_25px_rgba(74,222,128,0.2)] group">
+                  <div className="p-3 bg-green-500/20 rounded-xl group-hover:scale-110 transition-transform"><CheckCircle2 className="w-7 h-7 text-green-400 drop-shadow-[0_0_10px_currentColor]" /></div>
+                  <div>
+                    <p className="text-[10px] text-gray-400 uppercase tracking-widest font-bold mb-1 font-mono">TOTAL AC / 累计斩获</p>
+                    <p className="text-3xl font-black text-white"><AnimatedNumber value={stats.acCount} /></p>
+                  </div>
+                </div>
+                <div className="bg-white/5 backdrop-blur-xl border border-white/10 rounded-2xl p-5 flex items-center gap-4 hover:border-blue-500/50 transition-all duration-300 shadow-[0_8px_30px_rgb(0,0,0,0.5)] hover:shadow-[0_0_25px_rgba(96,165,250,0.2)] group">
+                  <div className="p-3 bg-blue-500/20 rounded-xl group-hover:scale-110 transition-transform"><Clock className="w-7 h-7 text-blue-400 drop-shadow-[0_0_10px_currentColor]" /></div>
+                  <div>
+                    <p className="text-[10px] text-gray-400 uppercase tracking-widest font-bold mb-1 font-mono">UPSOLVE / 技术债</p>
+                    <p className="text-3xl font-black text-white"><AnimatedNumber value={stats.upsolvingCount} /></p>
+                  </div>
+                </div>
+                <div className="bg-white/5 backdrop-blur-xl border border-white/10 rounded-2xl p-5 flex items-center gap-4 hover:border-amber-500/50 transition-all duration-300 shadow-[0_8px_30px_rgb(0,0,0,0.5)] hover:shadow-[0_0_25px_rgba(251,191,36,0.2)] group">
+                  <div className="p-3 bg-amber-500/20 rounded-xl group-hover:scale-110 transition-transform"><Trophy className="w-7 h-7 text-amber-400 drop-shadow-[0_0_10px_currentColor]" /></div>
+                  <div>
+                    <p className="text-[10px] text-gray-400 uppercase tracking-widest font-bold mb-1 font-mono">PEAK RATING / 战力峰值</p>
+                    <p className="text-3xl font-black text-transparent bg-clip-text bg-gradient-to-r from-amber-300 to-orange-500 drop-shadow-md"><AnimatedNumber value={stats.maxRating} /></p>
+                  </div>
+                </div>
+              </div>
             </div>
 
-            {/* Tags Banner */}
-            {selectedRecord.tags && (
-              <div className="px-6 py-3 bg-black/40 border-b border-white/5 flex flex-wrap gap-2">
-                <Tag className="w-4 h-4 text-cyan-500/70 mr-1" />
-                {selectedRecord.tags.split(',').map((tag, i) => (
-                  <span key={i} className="px-2 py-0.5 bg-cyan-900/20 border border-cyan-500/30 text-cyan-300 rounded text-xs font-mono uppercase tracking-wide">
-                    {tag.trim()}
-                  </span>
-                ))}
+            <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+              <div className="lg:col-span-1 space-y-6">
+                <div className="bg-[#0b0e14]/80 backdrop-blur-2xl border border-white/10 rounded-2xl p-6 shadow-2xl relative overflow-hidden group">
+                  <div className="absolute top-0 left-0 w-full h-[2px] bg-gradient-to-r from-transparent via-cyan-500 to-transparent opacity-50 group-hover:opacity-100 transition-opacity duration-500"></div>
+                  <h2 className="text-lg font-black text-white mb-6 flex items-center gap-2 uppercase tracking-wide">
+                    <Plus className="w-5 h-5 text-cyan-400 drop-shadow-[0_0_8px_currentColor]" />
+                    Inject Node / 节点录入
+                  </h2>
+                  <form onSubmit={handleSubmit} className="space-y-5">
+                    <div className="grid grid-cols-2 gap-4">
+                      <div>
+                        <label className="block text-[10px] uppercase font-mono tracking-widest text-gray-400 mb-1.5">Date</label>
+                        <input type="date" value={formData.date} onChange={e => setFormData({...formData, date: e.target.value})} className="w-full bg-black/50 border border-white/10 rounded-lg px-3 py-2 text-sm focus:outline-none focus:border-cyan-500 focus:ring-1 focus:ring-cyan-500/50 text-gray-200 transition-all"/>
+                      </div>
+                      <div>
+                        <label className="block text-[10px] uppercase font-mono tracking-widest text-gray-400 mb-1.5">Platform</label>
+                        <select value={formData.platform} onChange={e => setFormData({...formData, platform: e.target.value})} className="w-full bg-black/50 border border-white/10 rounded-lg px-3 py-2 text-sm focus:outline-none focus:border-cyan-500 focus:ring-1 focus:ring-cyan-500/50 text-gray-200 transition-all appearance-none">
+                          {PLATFORMS.map(p => <option key={p} value={p}>{p}</option>)}
+                        </select>
+                      </div>
+                    </div>
+                    <div>
+                      <label className="block text-[10px] uppercase font-mono tracking-widest text-gray-400 mb-1.5">Problem ID <span className="text-red-400">*</span></label>
+                      <input type="text" required placeholder="e.g. 1945C / ABC345-D" value={formData.problemId} onChange={e => setFormData({...formData, problemId: e.target.value})} className="w-full bg-black/50 border border-white/10 rounded-lg px-3 py-2.5 text-sm focus:outline-none focus:border-cyan-500 focus:ring-1 focus:ring-cyan-500/50 text-cyan-100 placeholder-gray-600 transition-all font-mono"/>
+                    </div>
+                    <div>
+                      <label className="block text-[10px] uppercase font-mono tracking-widest text-gray-400 mb-1.5">Difficulty / Rating</label>
+                      <input type="number" placeholder="e.g. 1400" value={formData.rating} onChange={e => setFormData({...formData, rating: e.target.value})} className="w-full bg-black/50 border border-white/10 rounded-lg px-3 py-2.5 text-sm focus:outline-none focus:border-cyan-500 focus:ring-1 focus:ring-cyan-500/50 text-purple-200 placeholder-gray-600 transition-all font-mono"/>
+                    </div>
+                    <div>
+                      <label className="block text-[10px] uppercase font-mono tracking-widest text-gray-400 mb-1.5">Tags</label>
+                      <input type="text" placeholder="e.g. dp, math, greedy" value={formData.tags} onChange={e => setFormData({...formData, tags: e.target.value})} className="w-full bg-black/50 border border-white/10 rounded-lg px-3 py-2.5 text-sm focus:outline-none focus:border-cyan-500 focus:ring-1 focus:ring-cyan-500/50 text-cyan-300 placeholder-gray-600 transition-all font-mono"/>
+                    </div>
+                    <div>
+                      <label className="block text-[10px] uppercase font-mono tracking-widest text-gray-400 mb-1.5 flex justify-between items-center">
+                        <span>Solution (Markdown)</span>
+                        <div className="flex gap-2">
+                          <input type="file" accept=".md,.txt" ref={mdInputRef} onChange={handleMdImport} className="hidden" />
+                          <input type="file" accept="image/*" ref={imgInputRef} onChange={handleImageInsert} className="hidden" />
+                          <button type="button" onClick={() => mdInputRef.current?.click()} className="flex items-center gap-1 text-[9px] bg-cyan-900/30 hover:bg-cyan-500/30 text-cyan-400 px-2 py-1 rounded border border-cyan-500/30 transition-colors shadow-[0_0_8px_rgba(6,182,212,0.1)] hover:shadow-[0_0_12px_rgba(6,182,212,0.4)]">
+                            <Upload className="w-3 h-3" /> 导入 .MD
+                          </button>
+                          <button type="button" onClick={() => imgInputRef.current?.click()} className="flex items-center gap-1 text-[9px] bg-purple-900/30 hover:bg-purple-500/30 text-purple-400 px-2 py-1 rounded border border-purple-500/30 transition-colors shadow-[0_0_8px_rgba(168,85,247,0.1)] hover:shadow-[0_0_12px_rgba(168,85,247,0.4)]">
+                            <ImageIcon className="w-3 h-3" /> 贴图
+                          </button>
+                        </div>
+                      </label>
+                      <textarea placeholder="在这里记录你的解题思路、转移方程或核心代码..." value={formData.solution} onChange={e => setFormData({...formData, solution: e.target.value})} className="w-full h-28 bg-black/50 border border-white/10 rounded-lg px-3 py-3 text-sm focus:outline-none focus:border-cyan-500 focus:ring-1 focus:ring-cyan-500/50 text-gray-300 placeholder-gray-600 font-mono transition-all resize-none custom-scrollbar leading-relaxed"/>
+                    </div>
+                    <div>
+                      <label className="block text-[10px] uppercase font-mono tracking-widest text-gray-400 mb-2">Status</label>
+                      <div className="grid grid-cols-3 gap-2">
+                        {STATUSES.map(s => (
+                          <button key={s} type="button" onClick={() => setFormData({...formData, status: s})} className={`py-2 text-xs font-bold rounded-lg border transition-all duration-300 font-mono ${formData.status === s ? getStatusColor(s) : 'bg-black/30 border-white/5 text-gray-500 hover:border-gray-600 hover:bg-white/5'}`}>{s}</button>
+                        ))}
+                      </div>
+                    </div>
+                    <button type="submit" className="w-full relative overflow-hidden group bg-cyan-600/20 border border-cyan-500/50 hover:bg-cyan-500 text-cyan-400 hover:text-white font-black py-3.5 rounded-lg transition-all duration-300 shadow-[0_0_15px_rgba(6,182,212,0.2)] hover:shadow-[0_0_30px_rgba(6,182,212,0.6)] mt-2 active:scale-[0.98]">
+                      <span className="relative z-10 flex items-center justify-center gap-2 tracking-widest uppercase text-sm">Commit Record</span>
+                    </button>
+                  </form>
+                </div>
               </div>
-            )}
 
-            {/* Markdown Body Viewer */}
-            <div className="p-6 md:p-8 overflow-y-auto flex-1 custom-scrollbar relative">
-              <div className="absolute -left-[1px] top-8 bottom-8 w-1 bg-gradient-to-b from-cyan-500 via-purple-500 to-transparent rounded-r-full opacity-50 shadow-[0_0_10px_rgba(6,182,212,0.5)]"></div>
-              
-              <div className="pl-6 text-gray-300">
-                {!selectedRecord.solution ? (
-                  <div className="h-full flex flex-col items-center justify-center text-gray-600 font-mono tracking-widest mt-20">
-                    <Terminal className="w-12 h-12 mb-4 opacity-20" />
-                    <p>[ SYSTEM.WARN: EMPTY_SOLUTION_DATA ]</p>
+              <div className="lg:col-span-2 flex flex-col gap-6">
+                <div className="bg-[#0b0e14]/80 backdrop-blur-xl border border-white/10 rounded-2xl p-2 pl-4 flex items-center gap-3 shadow-lg focus-within:border-cyan-500/50 focus-within:shadow-[0_0_20px_rgba(6,182,212,0.15)] transition-all">
+                  <Search className="w-5 h-5 text-cyan-500/70" />
+                  <input type="text" placeholder="Query by Problem, Tags, Platform..." value={searchQuery} onChange={(e) => setSearchQuery(e.target.value)} className="bg-transparent border-none focus:outline-none text-white font-mono w-full placeholder-gray-600 text-sm" />
+                  {searchQuery && (
+                    <div className="pr-2 flex items-center gap-2">
+                      <span className="text-[10px] font-mono font-bold bg-cyan-500/20 text-cyan-300 px-2.5 py-1 rounded border border-cyan-500/30 whitespace-nowrap uppercase tracking-wider">{filteredRecords.length} Match</span>
+                      <button onClick={() => setSearchQuery('')} className="p-1 text-gray-500 hover:text-white transition-colors"><X className="w-4 h-4" /></button>
+                    </div>
+                  )}
+                </div>
+
+                <div className="bg-[#0b0e14]/80 backdrop-blur-xl border border-white/10 rounded-2xl overflow-hidden flex-1 shadow-2xl relative flex flex-col">
+                  <div className="p-4 border-b border-white/5 flex justify-between items-center bg-black/40">
+                    <h2 className="text-[13px] uppercase tracking-widest font-black font-mono text-gray-300 flex items-center gap-2">
+                      <CalendarDays className="w-4 h-4 text-purple-400" />
+                      Data Stream Log
+                    </h2>
                   </div>
-                ) : (
-                  <div className="whitespace-pre-wrap font-mono text-[13px] md:text-sm leading-relaxed tracking-tight break-words">
-                    {selectedRecord.solution.split('\n').map((line, idx) => {
-                      if (line.startsWith('# ')) return <h1 key={idx} className="text-2xl font-black text-white mt-6 mb-4 pb-2 border-b border-white/10 tracking-wider drop-shadow-[0_0_8px_rgba(255,255,255,0.2)]">{line.replace('# ', '')}</h1>;
-                      if (line.startsWith('## ')) return <h2 key={idx} className="text-xl font-bold text-cyan-50 mt-5 mb-3">{line.replace('## ', '')}</h2>;
-                      if (line.startsWith('> ')) return <blockquote key={idx} className="border-l-2 border-cyan-500 pl-4 py-1 my-3 bg-cyan-500/10 text-cyan-200 italic rounded-r-lg">{line.replace('> ', '')}</blockquote>;
-                      if (line.startsWith('```')) return <div key={idx} className="my-2 h-2"></div>; 
-                      if (line.match(/^[-*] /)) return <li key={idx} className="ml-4 list-disc text-gray-300 marker:text-cyan-500">{line.substring(2)}</li>;
-                      
-                      // 内联渲染 Base64 图片或普通外链图片
-                      if (line.includes('![')) {
-                        const parts = line.split(/(!\[.*?\]\(.*?\))/g);
-                        return (
-                          <p key={idx} className="min-h-[1.5em] text-gray-300/90 my-2">
-                            {parts.map((part, i) => {
-                              const match = part.match(/!\[(.*?)\]\((.*?)\)/);
-                              if (match) {
-                                return <img key={i} src={match[2]} alt={match[1]} className="max-w-full rounded-xl border border-cyan-500/30 shadow-[0_0_20px_rgba(6,182,212,0.15)] my-4 max-h-[400px] object-contain bg-black/50" loading="lazy" />;
-                              }
-                              return <span key={i}>{part}</span>;
-                            })}
-                          </p>
-                        );
-                      }
+                  <div className="overflow-x-auto flex-1 custom-scrollbar">
+                    <table className="w-full text-left text-sm whitespace-nowrap">
+                      <thead className="bg-black/60 text-cyan-500/60 text-[10px] font-mono uppercase tracking-[0.2em]">
+                        <tr>
+                          <th className="px-5 py-4 font-normal">Timestamp</th>
+                          <th className="px-5 py-4 font-normal">Entity</th>
+                          <th className="px-5 py-4 font-normal">Rating</th>
+                          <th className="px-5 py-4 font-normal">Tags</th>
+                          <th className="px-5 py-4 font-normal">Status</th>
+                          <th className="px-5 py-4 text-center font-normal">Solution</th>
+                        </tr>
+                      </thead>
+                      <tbody className="divide-y divide-white/5">
+                        {filteredRecords.length === 0 ? (
+                          <tr><td colSpan="6" className="px-5 py-24 text-center"><p className="text-gray-500 font-mono tracking-widest uppercase">[ 0 Data Blocks Found ]</p></td></tr>
+                        ) : (
+                          filteredRecords.map(record => (
+                            <tr key={record.id} className="hover:bg-white/5 transition-colors group">
+                              <td className="px-5 py-4 text-gray-500 font-mono text-xs">{record.date}</td>
+                              <td className="px-5 py-4">
+                                <div className="flex flex-col">
+                                  <span className="font-bold text-gray-200 group-hover:text-cyan-300 transition-colors tracking-wide">{record.problemId}</span>
+                                  <span className="text-[10px] text-gray-500 font-mono mt-0.5">{record.platform}</span>
+                                </div>
+                              </td>
+                              <td className="px-5 py-4">
+                                <span className={`px-2 py-0.5 rounded text-xs font-bold font-mono border ${record.rating >= 2000 ? 'bg-red-500/10 text-red-400 border-red-500/30 shadow-[0_0_8px_rgba(239,68,68,0.2)]' : record.rating >= 1600 ? 'bg-purple-500/10 text-purple-400 border-purple-500/30 shadow-[0_0_8px_rgba(168,85,247,0.2)]' : record.rating >= 1200 ? 'bg-cyan-500/10 text-cyan-400 border-cyan-500/30' : 'bg-gray-800 border-gray-700 text-gray-300'}`}>
+                                  {record.rating ? `R-${record.rating}` : 'N/A'}
+                                </span>
+                              </td>
+                              <td className="px-5 py-4">
+                                <div className="flex flex-wrap gap-1.5 max-w-[200px] whitespace-normal">
+                                  {record.tags ? record.tags.split(',').map((tag, i) => (
+                                    <span key={i} className="px-1.5 py-0.5 bg-cyan-900/10 border border-cyan-500/20 rounded text-[10px] text-cyan-300/80 font-mono uppercase tracking-wider">{tag.trim()}</span>
+                                  )) : <span className="text-gray-600 text-xs">-</span>}
+                                </div>
+                              </td>
+                              <td className="px-5 py-4">
+                                <span className={`px-2 py-1 border rounded text-[10px] uppercase font-black tracking-widest font-mono ${getStatusColor(record.status)}`}>{record.status}</span>
+                              </td>
+                              <td className="px-5 py-4 text-center">
+                                <button onClick={() => setSelectedRecord(record)} className={`inline-flex items-center justify-center p-2 rounded-xl transition-all duration-300 ${record.solution ? 'bg-purple-500/10 text-purple-400 hover:bg-purple-500/30 hover:text-purple-200 border border-purple-500/30 hover:shadow-[0_0_15px_rgba(168,85,247,0.4)]' : 'bg-white/5 text-gray-500 hover:bg-white/10 hover:text-gray-300 border border-transparent'}`} title={record.solution ? "查看题解" : "无题解内容"}>
+                                  <FileText className="w-4 h-4" />
+                                </button>
+                              </td>
+                            </tr>
+                          ))
+                        )}
+                      </tbody>
+                    </table>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
 
-                      return <p key={idx} className="min-h-[1.5em] text-gray-300/90">{line}</p>;
-                    })}
+          {selectedRecord && (
+            <div className="fixed inset-0 z-50 flex items-center justify-center p-4 sm:p-6 md:p-12 animate-in fade-in zoom-in-95 duration-300">
+              <div className="absolute inset-0 bg-cover bg-center brightness-[0.3] contrast-125 transition-all duration-700" style={{ backgroundImage: 'url("https://images.unsplash.com/photo-1614729939124-032f0b56c9ce?q=80&w=2000&auto=format&fit=crop")' }}></div>
+              <div className="absolute inset-0 bg-black/40 backdrop-blur-md"></div>
+              
+              <div className="relative w-full max-w-4xl max-h-full bg-[#0a0a0f]/80 backdrop-blur-2xl border border-cyan-500/30 rounded-2xl shadow-[0_0_50px_rgba(6,182,212,0.15)] flex flex-col overflow-hidden ring-1 ring-white/10">
+                <div className="flex items-start md:items-center justify-between p-6 border-b border-white/10 bg-gradient-to-r from-cyan-900/30 to-transparent">
+                  <div className="flex items-start gap-4">
+                    <div className="bg-black/50 p-2.5 rounded-xl border border-white/10 shadow-inner">
+                      <Code2 className="w-6 h-6 text-cyan-400 drop-shadow-[0_0_8px_currentColor]" />
+                    </div>
+                    <div>
+                      <h3 className="text-2xl font-black text-white tracking-wide drop-shadow-md">{selectedRecord.platform} - {selectedRecord.problemId}</h3>
+                      <div className="flex flex-wrap items-center gap-3 mt-2 text-[10px] font-mono uppercase tracking-widest text-gray-400">
+                        <span className="flex items-center gap-1 bg-black/30 px-2 py-1 rounded border border-white/5"><CalendarDays className="w-3 h-3" /> {selectedRecord.date}</span>
+                        <span className={`px-2 py-1 rounded border ${getStatusColor(selectedRecord.status)}`}>{selectedRecord.status}</span>
+                        {selectedRecord.rating && <span className="text-amber-400 border border-amber-400/30 px-2 py-1 rounded bg-amber-400/10 drop-shadow-[0_0_5px_rgba(251,191,36,0.3)]">RATING: {selectedRecord.rating}</span>}
+                      </div>
+                    </div>
+                  </div>
+                  <button onClick={() => setSelectedRecord(null)} className="p-2.5 text-gray-500 hover:text-white hover:bg-white/10 rounded-xl transition-all bg-black/30 border border-white/5 hover:border-white/20"><X className="w-5 h-5" /></button>
+                </div>
+
+                {selectedRecord.tags && (
+                  <div className="px-6 py-3 bg-black/40 border-b border-white/5 flex flex-wrap gap-2">
+                    <Tag className="w-4 h-4 text-cyan-500/70 mr-1" />
+                    {selectedRecord.tags.split(',').map((tag, i) => <span key={i} className="px-2 py-0.5 bg-cyan-900/20 border border-cyan-500/30 text-cyan-300 rounded text-xs font-mono uppercase tracking-wide">{tag.trim()}</span>)}
                   </div>
                 )}
+
+                <div className="p-6 md:p-8 overflow-y-auto flex-1 custom-scrollbar relative">
+                  <div className="absolute -left-[1px] top-8 bottom-8 w-1 bg-gradient-to-b from-cyan-500 via-purple-500 to-transparent rounded-r-full opacity-50 shadow-[0_0_10px_rgba(6,182,212,0.5)]"></div>
+                  <div className="pl-6 text-gray-300">
+                    {!selectedRecord.solution ? (
+                      <div className="h-full flex flex-col items-center justify-center text-gray-600 font-mono tracking-widest mt-20"><Terminal className="w-12 h-12 mb-4 opacity-20" /><p>[ SYSTEM.WARN: EMPTY_SOLUTION_DATA ]</p></div>
+                    ) : (
+                      <div className="whitespace-pre-wrap font-mono text-[13px] md:text-sm leading-relaxed tracking-tight break-words">
+                        {selectedRecord.solution.split('\n').map((line, idx) => {
+                          if (line.startsWith('# ')) return <h1 key={idx} className="text-2xl font-black text-white mt-6 mb-4 pb-2 border-b border-white/10 tracking-wider drop-shadow-[0_0_8px_rgba(255,255,255,0.2)]">{line.replace('# ', '')}</h1>;
+                          if (line.startsWith('## ')) return <h2 key={idx} className="text-xl font-bold text-cyan-50 mt-5 mb-3">{line.replace('## ', '')}</h2>;
+                          if (line.startsWith('> ')) return <blockquote key={idx} className="border-l-2 border-cyan-500 pl-4 py-1 my-3 bg-cyan-500/10 text-cyan-200 italic rounded-r-lg">{line.replace('> ', '')}</blockquote>;
+                          if (line.startsWith('```')) return <div key={idx} className="my-2 h-2"></div>; 
+                          if (line.match(/^[-*] /)) return <li key={idx} className="ml-4 list-disc text-gray-300 marker:text-cyan-500">{line.substring(2)}</li>;
+                          if (line.includes('![')) {
+                            const parts = line.split(/(!\[.*?\]\(.*?\))/g);
+                            return (
+                              <p key={idx} className="min-h-[1.5em] text-gray-300/90 my-2">
+                                {parts.map((part, i) => {
+                                  const match = part.match(/!\[(.*?)\]\((.*?)\)/);
+                                  if (match) return <img key={i} src={match[2]} alt={match[1]} className="max-w-full rounded-xl border border-cyan-500/30 shadow-[0_0_20px_rgba(6,182,212,0.15)] my-4 max-h-[400px] object-contain bg-black/50" loading="lazy" />;
+                                  return <span key={i}>{part}</span>;
+                                })}
+                              </p>
+                            );
+                          }
+                          return <p key={idx} className="min-h-[1.5em] text-gray-300/90">{line}</p>;
+                        })}
+                      </div>
+                    )}
+                  </div>
+                </div>
+                
+                <div className="p-4 bg-black/60 border-t border-white/10 text-right">
+                  <p className="text-[10px] text-gray-500 font-mono uppercase tracking-widest">Data Instance ID: {selectedRecord.id}</p>
+                </div>
               </div>
             </div>
-            
-            {/* Modal Footer */}
-            <div className="p-4 bg-black/60 border-t border-white/10 text-right">
-              <p className="text-[10px] text-gray-500 font-mono uppercase tracking-widest">
-                Data Instance ID: {selectedRecord.id}
-              </p>
-            </div>
-          </div>
+          )}
         </div>
-      )}
-    </div>
-  );
-}
+      );
+    };
+
+    const root = createRoot(document.getElementById('root'));
+    root.render(<App />);
+  </script>
+</body>
+</html>
