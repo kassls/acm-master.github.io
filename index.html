@@ -41,38 +41,76 @@
     // Get globals from window
     const { marked, DOMPurify, hljs, renderMathInElement } = window;
 
-    // 1. Configure marked to use highlight.js
-    marked.setOptions({
-      highlight: function(code, lang) {
-        if (lang && hljs.getLanguage(lang)) {
-          return hljs.highlight(code, { language: lang }).value;
-        }
-        return hljs.highlightAuto(code).value;
-      },
-      langPrefix: 'hljs language-',
-      breaks: true,
-      gfm: true
-    });
+    // --- 独立的 Markdown 渲染组件，确保高亮和公式安全挂载 ---
+    const MarkdownViewer = ({ md }) => {
+        const containerRef = useRef(null);
 
-    // 2. Safe Markdown Renderer
-    const getRenderedMarkdown = (md) => {
-        if (!md) return '';
-        try {
-            const rawHtml = marked.parse(md);
-            // Allow classes for highlight.js and KaTeX
-            return DOMPurify.sanitize(rawHtml, {
-                ALLOWED_TAGS: ['h1', 'h2', 'h3', 'h4', 'h5', 'h6', 'blockquote', 'p', 'a', 'ul', 'ol',
-                     'nl', 'li', 'b', 'i', 'strong', 'em', 'strike', 'code', 'hr', 'br', 'div',
-                     'table', 'thead', 'caption', 'tbody', 'tr', 'th', 'td', 'pre', 'iframe', 'span', 'img', 'del'],
-                ALLOWED_ATTR: ['href', 'name', 'target', 'src', 'class', 'id', 'alt', 'title']
-            });
-        } catch (e) {
-            console.error("Markdown parse error:", e);
-            return '<p class="text-red-400 font-mono">[ 渲染引擎错误: MD_PARSE_FAILED ]</p>';
+        const html = useMemo(() => {
+            if (!md) return '';
+            try {
+                marked.setOptions({ breaks: true, gfm: true });
+                const rawHtml = marked.parse(md);
+                // 允许保留 class 属性，否则代码高亮会失效
+                return DOMPurify.sanitize(rawHtml, {
+                    ALLOWED_TAGS: ['h1', 'h2', 'h3', 'h4', 'h5', 'h6', 'blockquote', 'p', 'a', 'ul', 'ol',
+                         'nl', 'li', 'b', 'i', 'strong', 'em', 'strike', 'code', 'hr', 'br', 'div',
+                         'table', 'thead', 'caption', 'tbody', 'tr', 'th', 'td', 'pre', 'iframe', 'span', 'img', 'del'],
+                    ALLOWED_ATTR: ['href', 'name', 'target', 'src', 'class', 'id', 'alt', 'title']
+                });
+            } catch (e) {
+                console.error("Markdown parse error:", e);
+                return '<p class="text-red-400 font-mono">[ 渲染引擎错误: MD_PARSE_FAILED ]</p>';
+            }
+        }, [md]);
+
+        useEffect(() => {
+            if (!containerRef.current) return;
+            
+            // 1. 扫描并渲染数学公式 (KaTeX)
+            if (renderMathInElement) {
+                try {
+                    renderMathInElement(containerRef.current, {
+                        delimiters: [
+                            {left: '$$', right: '$$', display: true},
+                            {left: '$', right: '$', display: false},
+                            {left: '\\(', right: '\\)', display: false},
+                            {left: '\\[', right: '\\]', display: true}
+                        ],
+                        throwOnError: false
+                    });
+                } catch(e) { console.error("KaTeX error:", e); }
+            }
+
+            // 2. 扫描并渲染代码高亮 (Highlight.js)
+            if (hljs) {
+                try {
+                    const blocks = containerRef.current.querySelectorAll('pre code');
+                    blocks.forEach((block) => {
+                        hljs.highlightElement(block);
+                    });
+                } catch(e) { console.error("HLJS error:", e); }
+            }
+        }, [html]);
+
+        if (!md) {
+            return (
+                <div className="h-40 flex flex-col items-center justify-center text-gray-600 font-mono tracking-widest mt-10">
+                    <Terminal className="w-12 h-12 mb-4 opacity-20" />
+                    <p>[ SYSTEM.WARN: EMPTY_SOLUTION_DATA ]</p>
+                </div>
+            );
         }
+
+        return (
+            <div 
+                ref={containerRef}
+                className="markdown-body" 
+                dangerouslySetInnerHTML={{ __html: html }} 
+            />
+        );
     };
 
-    // 初始化模拟数据（包含高亮和数学公式测试）
+    // 初始化模拟数据
     const initialRecords = [
       { 
         id: '1', date: new Date().toISOString().split('T')[0], platform: 'Codeforces', problemId: '1945C', rating: 2400, tags: '2-SAT, segment tree', status: 'AC',
@@ -140,25 +178,6 @@
 
       const mdInputRef = useRef(null);
       const imgInputRef = useRef(null);
-
-      // 处理公式自动渲染
-      useEffect(() => {
-          if (selectedRecord && renderMathInElement) {
-              // 留出时间让 React 将 HTML 渲染到 DOM 中
-              setTimeout(() => {
-                  const el = document.getElementById('markdown-container');
-                  if (el) {
-                      renderMathInElement(el, {
-                          delimiters: [
-                              {left: '$$', right: '$$', display: true},
-                              {left: '$', right: '$', display: false}
-                          ],
-                          throwOnError: false
-                      });
-                  }
-              }, 50);
-          }
-      }, [selectedRecord]);
 
       const handleMdImport = (e) => {
         const file = e.target.files[0];
@@ -616,7 +635,7 @@
                     </div>
                   )}
 
-                  {/* 独立渲染组件 (安全消毒后的 Markdown + 晚绑定 KaTeX 与 HLJS 解析) */}
+                  {/* 独立渲染组件挂载点 */}
                   <MarkdownViewer md={selectedRecord.solution} />
                 </div>
               </div>
