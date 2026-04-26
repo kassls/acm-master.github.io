@@ -1,813 +1,648 @@
-<!DOCTYPE html>
-<html lang="zh-CN">
-<head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>ACMerv9.0</title>
-  
-  <script src="https://cdn.tailwindcss.com"></script>
-  <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
-  
-  <script src="https://cdnjs.cloudflare.com/ajax/libs/marked/4.3.0/marked.min.js"></script>
-  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.8.0/styles/dracula.min.css">
-  <script src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.8.0/highlight.min.js"></script>
-  <script src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.8.0/languages/cpp.min.js"></script>
+import React, { useState, useMemo, useRef, useEffect } from 'react';
+import { 
+  Code2, CheckCircle2, Clock, CalendarDays, Tag, Plus, 
+  Target, Trophy, Search, FileText, X, Terminal, Sparkles, Upload, ImageIcon
+} from 'lucide-react';
 
-  <script>
-    window.MathJax = {
-      tex: { inlineMath: [['$', '$'], ['\\(', '\\)']], displayMath: [['$$', '$$'], ['\\[', '\\]']] },
-      options: { skipHtmlTags: ['script', 'noscript', 'style', 'textarea', 'pre', 'code'] },
-      startup: { typeset: false }
-    };
-  </script>
-  <script id="MathJax-script" async src="https://cdnjs.cloudflare.com/ajax/libs/mathjax/3.2.2/es5/tex-mml-chtml.min.js"></script>
+// 初始化模拟数据（包含 Markdown 题解示例）
+const initialRecords = [
+  { 
+    id: '1', date: new Date().toISOString().split('T')[0], platform: 'Codeforces', problemId: '1945C', rating: 1400, tags: 'math, greedy', status: 'AC',
+    solution: '# 核心思路\n通过预处理前缀和，O(1) 判定左侧和右侧的 0/1 数量。\n\n## 复杂度\n- 时间: O(N)\n- 空间: O(N)\n\n> 贪心即可，注意中心点的取整逻辑。'
+  },
+  { 
+    id: '2', date: new Date().toISOString().split('T')[0], platform: 'AtCoder', problemId: 'ABC345-D', rating: 1200, tags: 'dp, bitmask', status: 'Upsolving',
+    solution: '典型的状压 DP。用一个整型变量表示当前网格的覆盖状态。\n\n```cpp\n// 转移方程核心\ndp[mask | new_mask] = true;\n```'
+  },
+  { 
+    id: '3', date: new Date(Date.now() - 86400000).toISOString().split('T')[0], platform: 'Luogu', problemId: 'P3372', rating: 1500, tags: 'segment tree', status: 'AC',
+    solution: '线段树模板题1。\n**易错点：**\n1. Lazy Tag 下传时，左右儿子的区间长度千万不能乘错。\n2. `build()` 的时候记得初始化 `tree[p]`。'
+  }
+];
 
-  <style>
-    @import url('https://fonts.googleapis.com/css2?family=Rajdhani:wght@500;700;900&family=Fira+Code:wght@400;600&display=swap');
+const PLATFORMS = ['Codeforces', 'AtCoder', 'Luogu', 'LeetCode', 'Vjudge', 'Other'];
+const STATUSES = ['AC', 'Upsolving', 'WA', 'TLE', 'MLE'];
 
-    ::-webkit-scrollbar { width: 6px; height: 6px; }
-    ::-webkit-scrollbar-track { background: rgba(0, 0, 0, 0.4); }
-    ::-webkit-scrollbar-thumb { background: rgba(6, 182, 212, 0.6); border-radius: 0px; }
-    ::-webkit-scrollbar-thumb:hover { background: rgba(217, 70, 239, 1); }
-    .font-sci-fi { font-family: 'Rajdhani', sans-serif; }
+// 炫酷的数字滚动和爆光特效引擎
+const AnimatedNumber = ({ value, prefix = '' }) => {
+  const [displayValue, setDisplayValue] = useState(0);
+  const [isAnimating, setIsAnimating] = useState(true);
 
-    /* === 破茧爆发爆闪 === */
-    @keyframes screen-flash {
-      0% { opacity: 1; background: #ffffff; }
-      10% { opacity: 0.8; background: #d946ef; } 
-      100% { opacity: 0; background: transparent; }
+  useEffect(() => {
+    let start = 0;
+    const end = parseInt(value) || 0;
+    if (start === end) {
+      setDisplayValue(value);
+      setIsAnimating(false);
+      return;
     }
-    @keyframes shockwave-expand {
-      0% { transform: scale(0); opacity: 1; border-width: 60px; border-color: rgba(217, 70, 239, 1); }
-      100% { transform: scale(15); opacity: 0; border-width: 0px; border-color: rgba(6, 182, 212, 0.5); }
-    }
-    .animate-flash { animation: screen-flash 1s cubic-bezier(0.16, 1, 0.3, 1) forwards; }
-    .animate-shockwave {
-      position: fixed; top: 50%; left: 50%;
-      width: 20vw; height: 20vw; margin-top: -10vw; margin-left: -10vw;
-      border: 0px solid transparent; border-radius: 50%; pointer-events: none; z-index: 9999;
-      animation: shockwave-expand 1.2s cubic-bezier(0.1, 0.8, 0.3, 1) forwards;
-    }
-
-    /* === 极致通透毛玻璃 HUD 面板 === */
-    .hud-panel {
-      background: rgba(10, 15, 25, 0.35);
-      backdrop-filter: blur(16px) saturate(150%);
-      -webkit-backdrop-filter: blur(16px) saturate(150%);
-      border: 1px solid rgba(6, 182, 212, 0.25);
-      position: relative;
-    }
-    .hud-clip { clip-path: polygon(0 0, calc(100% - 20px) 0, 100% 20px, 100% 100%, 20px 100%, 0 calc(100% - 20px)); }
-    .hud-clip-ascended {
-      border-color: rgba(217, 70, 239, 0.5);
-      box-shadow: 0 0 30px rgba(217, 70, 239, 0.2) inset;
-    }
-
-    .hud-inner-glass {
-      background: rgba(0, 0, 0, 0.3);
-      backdrop-filter: blur(8px);
-    }
-
-    /* === 能量槽动态流光 === */
-    @keyframes progress-stripes {
-      0% { background-position: 0 0; }
-      100% { background-position: 40px 0; }
-    }
-    @keyframes gradient-flow {
-      0% { background-position: 0% 50%; }
-      50% { background-position: 100% 50%; }
-      100% { background-position: 0% 50%; }
-    }
-    .energy-bar-stripes {
-      background-image: linear-gradient(45deg, rgba(255,255,255,0.2) 25%, transparent 25%, transparent 50%, rgba(255,255,255,0.2) 50%, rgba(255,255,255,0.2) 75%, transparent 75%, transparent);
-      background-size: 40px 40px;
-      animation: progress-stripes 1s linear infinite;
-    }
-    .bg-ascended-flow {
-      background: linear-gradient(90deg, #d946ef, #8b5cf6, #06b6d4, #f59e0b, #d946ef);
-      background-size: 300% 100%;
-      animation: gradient-flow 3s ease infinite;
-    }
-
-    .scanlines {
-      background: linear-gradient(to bottom, rgba(255,255,255,0), rgba(255,255,255,0) 50%, rgba(0,0,0,0.15) 50%, rgba(0,0,0,0.15));
-      background-size: 100% 4px; position: absolute; inset: 0; pointer-events: none; opacity: 0.3;
-    }
-
-    .reader-glass {
-      background: rgba(10, 15, 25, 0.4);
-      backdrop-filter: blur(25px) saturate(180%);
-      -webkit-backdrop-filter: blur(25px) saturate(180%);
-      border: 1px solid rgba(255, 255, 255, 0.1);
-      box-shadow: 0 8px 32px 0 rgba(0, 0, 0, 0.5);
-    }
-
-    /* === 深度美化 Select Dropdown === */
-    .cyber-select {
-      appearance: none;
-      -webkit-appearance: none;
-      background-image: url("data:image/svg+xml;charset=UTF-8,%3csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%2306b6d4' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3e%3cpolyline points='6 9 12 15 18 9'%3e%3c/polyline%3e%3c/svg%3e");
-      background-repeat: no-repeat;
-      background-position: right 1rem center;
-      background-size: 1.2em;
-    }
-    .cyber-select option {
-      background-color: #0b1120;
-      color: #e2e8f0;
-      font-family: 'Rajdhani', sans-serif;
-      font-weight: bold;
-    }
-
-    /* === 绝对坚固的 Markdown & C++ 渲染体系 === */
-    .md-prose { color: #e2e8f0; font-size: 1.05rem; line-height: 1.8; word-break: break-word; }
-    .md-prose h1, .md-prose h2, .md-prose h3 { color: #ffffff; font-family: 'Rajdhani', sans-serif; font-weight: 700; margin-top: 1.5em; margin-bottom: 0.5em; letter-spacing: 0.5px; }
-    .md-prose h1 { font-size: 2.25rem; border-bottom: 2px solid rgba(6, 182, 212, 0.4); padding-bottom: 0.3em; }
-    .md-prose h2 { font-size: 1.75rem; border-bottom: 1px solid rgba(255, 255, 255, 0.1); padding-bottom: 0.3em; }
-    .md-prose h3 { font-size: 1.35rem; color: #67e8f9; }
-    .md-prose p, .md-prose li { margin-bottom: 1em; color: #cbd5e1; }
-    .md-prose ul { list-style-type: disc; padding-left: 1.5em; }
-    .md-prose ol { list-style-type: decimal; padding-left: 1.5em; }
-    
-    .md-prose code:not(pre code) { 
-      font-family: 'Fira Code', monospace; background: rgba(217, 70, 239, 0.15); color: #f472b6; 
-      padding: 0.2em 0.4em; border-radius: 4px; font-size: 0.9em; 
-    }
-    
-    /* 玻璃感代码外框 */
-    .md-prose pre { 
-      background: rgba(15, 20, 30, 0.7) !important; 
-      backdrop-filter: blur(12px);
-      -webkit-backdrop-filter: blur(12px);
-      border: 1px solid rgba(6, 182, 212, 0.3);
-      box-shadow: inset 0 0 20px rgba(0,0,0,0.5);
-      padding: 1.2em !important; 
-      border-radius: 8px; 
-      overflow-x: auto; 
-      margin: 1.5em 0; 
-    }
-    
-    /* 解除拦截，让 Dracula 完全接管语法颜色 */
-    .md-prose pre code { 
-      background: transparent !important; 
-      padding: 0 !important; 
-      font-family: 'Fira Code', monospace; 
-      font-size: 0.9em; 
-    }
-    
-    .md-prose blockquote { 
-      border-left: 4px solid #06b6d4; background: linear-gradient(90deg, rgba(6,182,212,0.1) 0%, transparent 100%);
-      padding: 1em 1.5em; margin: 1.5em 0; color: #94a3b8; font-style: italic; border-radius: 0 8px 8px 0;
-    }
-  </style>
-</head>
-<body class="bg-[#030305] text-slate-200 overflow-x-hidden selection:bg-fuchsia-500/30">
-  <div id="root"></div>
-
-  <script type="text/babel" data-type="module">
-    import React, { useState, useEffect, useRef } from 'https://esm.sh/react@18.2.0';
-    import { createRoot } from 'https://esm.sh/react-dom@18.2.0/client';
-    import { 
-      Flame, CheckCircle2, Swords, Search, Tag, ImageIcon,
-      Plus, FileText, Upload, ArrowLeft, TerminalSquare, Trash2, Target, Zap, Clock
-    } from 'https://esm.sh/lucide-react@0.263.1';
-
-    // ==========================================
-    // 核心修复：纯粹的基础解析配置，将高亮逻辑移交至 React 生命周期
-    // ==========================================
-    if (typeof marked !== 'undefined') {
-      marked.setOptions({ 
-        breaks: true, 
-        gfm: true
-      });
-    }
-
-    // ==========================================
-    // 终极 VFX 引擎：v7星系 & 真实卡冈图雅黑洞
-    // ==========================================
-    const ParticleEngine = ({ isGodMode, burstTrigger }) => {
-      const canvasRef = useRef(null);
-
-      useEffect(() => {
-        const canvas = canvasRef.current;
-        const ctx = canvas.getContext('2d', { alpha: false });
-        let w = canvas.width = window.innerWidth;
-        let h = canvas.height = window.innerHeight;
-
-        // -------------------------------------------------------------------
-        // < 10 题：完全回退至 v7.0 的阿基米德螺旋星空 (一个字符未改)
-        // -------------------------------------------------------------------
-        const arms = 4; 
-        const galaxyStars = Array.from({ length: 8000 }, () => {
-          const r = Math.pow(Math.random(), 1.5) * w; 
-          const armOffset = (Math.floor(Math.random() * arms) * Math.PI * 2) / arms;
-          const angle = armOffset + (r / w) * Math.PI * 3 + (Math.random() - 0.5) * 1.5;
-          
-          return {
-            r: r,
-            angle: angle,
-            speed: 0.0002 + 0.001 * (1 - Math.min(r / w, 1)), 
-            size: Math.random() * 1.5 + 0.5,
-            hue: 180 + (r / w) * 100 + Math.random() * 30,
-            light: 50 + Math.random() * 30
-          };
-        });
-
-        // -------------------------------------------------------------------
-        // >= 10 题：环境星辰 (围绕黑洞漂浮的背景)
-        // -------------------------------------------------------------------
-        const bgStars = Array.from({ length: 400 }, () => ({
-          angle: Math.random() * Math.PI * 2,
-          r: Math.random() * w * 1.5,
-          speed: 0.0001 + Math.random() * 0.0002,
-          size: Math.random() * 1.5 + 0.5,
-          alpha: Math.random() * 0.5 + 0.3
-        }));
-
-        let animationId;
-        let time = 0;
-        let burstMultiplier = 1;
-
-        const animate = () => {
-          time++;
-          if (burstMultiplier > 1) burstMultiplier *= 0.95;
-
-          const cx = w / 2;
-          const cy = h / 2;
-
-          if (!isGodMode) {
-            // ==========================================
-            // < 10 题 渲染逻辑 (完全沿用 v7.0)
-            // ==========================================
-            ctx.fillStyle = `rgba(3, 5, 10, ${0.1 / burstMultiplier})`; 
-            ctx.fillRect(0, 0, w, h);
-            ctx.globalCompositeOperation = 'lighter';
-            
-            galaxyStars.forEach(p => {
-              p.angle += p.speed; 
-              const x = cx + Math.cos(p.angle) * p.r;
-              const y = cy + Math.sin(p.angle) * p.r * 0.8; 
-              
-              ctx.fillStyle = `hsla(${p.hue}, 100%, ${p.light}%, 0.8)`;
-              ctx.fillRect(x, y, p.size, p.size);
-            });
-
-          } else {
-            // ==========================================
-            // >= 10 题：电影级 卡冈图雅黑洞 (无粒子，全图形渲染)
-            // ==========================================
-            const R = Math.min(w, h) * 0.22; // 完美覆盖率
-            
-            // 1. 深邃宇宙与背景星辰
-            ctx.globalCompositeOperation = 'source-over';
-            ctx.fillStyle = '#020205';
-            ctx.fillRect(0, 0, w, h);
-            
-            ctx.globalCompositeOperation = 'lighter';
-            bgStars.forEach(s => {
-               s.angle += s.speed;
-               let x = cx + Math.cos(s.angle) * s.r;
-               let y = cy + Math.sin(s.angle) * s.r;
-               // 不在黑洞范围内才绘制
-               if(s.r > R * 1.2) {
-                   ctx.fillStyle = `rgba(255,255,255,${s.alpha})`;
-                   ctx.fillRect(x, y, s.size, s.size);
-               }
-            });
-
-            ctx.save();
-            ctx.translate(cx, cy);
-
-            const tilt = 0.15; // 吸积盘倾斜度
-
-            // 2. 引力透镜顶部光环 (Top Halo - 爱因斯坦环)
-            ctx.beginPath();
-            ctx.ellipse(0, -R*0.1, R*1.6, R*1.3, 0, Math.PI, 0); 
-            const topHaloGrad = ctx.createRadialGradient(0, 0, R, 0, 0, R*2.5);
-            topHaloGrad.addColorStop(0, 'rgba(255, 255, 255, 0.9)');
-            topHaloGrad.addColorStop(0.1, 'rgba(255, 220, 150, 0.8)');
-            topHaloGrad.addColorStop(0.4, 'rgba(200, 100, 30, 0.4)');
-            topHaloGrad.addColorStop(1, 'rgba(0, 0, 0, 0)');
-            ctx.lineWidth = R*0.6;
-            ctx.strokeStyle = topHaloGrad;
-            ctx.stroke();
-
-            // 3. 引力透镜底部光环 (Bottom Halo)
-            ctx.beginPath();
-            ctx.ellipse(0, R*0.1, R*1.4, R*1.1, 0, 0, Math.PI); 
-            ctx.lineWidth = R*0.4;
-            ctx.strokeStyle = topHaloGrad;
-            ctx.globalAlpha = 0.4; // 底部略暗
-            ctx.stroke();
-            ctx.globalAlpha = 1.0;
-
-            // 4. 后半部分吸积盘 (Back Disk)
-            const diskWidth = R * 4.5;
-            const diskHeight = R * 4.5 * tilt;
-            
-            // 多普勒束流效应：左侧靠近（蓝移、极亮），右侧远离（红移、暗淡）
-            const diskDoppler = ctx.createLinearGradient(-diskWidth, 0, diskWidth, 0);
-            diskDoppler.addColorStop(0, 'rgba(255, 255, 255, 1)'); 
-            diskDoppler.addColorStop(0.2, 'rgba(255, 230, 150, 0.9)');
-            diskDoppler.addColorStop(0.6, 'rgba(200, 80, 20, 0.6)'); 
-            diskDoppler.addColorStop(1, 'rgba(50, 10, 10, 0.2)');
-
-            ctx.beginPath();
-            ctx.ellipse(0, 0, diskWidth, diskHeight, 0, Math.PI, 0); 
-            ctx.fillStyle = diskDoppler;
-            ctx.fill();
-
-            // 5. 事件视界 (Event Horizon - 绝对的黑体)
-            ctx.globalCompositeOperation = 'source-over';
-            ctx.beginPath();
-            ctx.arc(0, 0, R, 0, Math.PI*2);
-            ctx.fillStyle = '#000000';
-            ctx.fill();
-
-            // 6. 光子环 (Photon Ring Glow)
-            ctx.globalCompositeOperation = 'screen';
-            ctx.beginPath();
-            ctx.arc(0, 0, R+1, 0, Math.PI*2);
-            ctx.strokeStyle = 'rgba(255, 240, 200, 0.8)';
-            ctx.lineWidth = 3;
-            ctx.shadowBlur = 20;
-            ctx.shadowColor = 'rgba(255, 180, 50, 1)';
-            ctx.stroke();
-            ctx.shadowBlur = 0;
-
-            // 7. 前半部分吸积盘 (Front Disk - 遮挡黑洞)
-            ctx.beginPath();
-            ctx.ellipse(0, 0, diskWidth, diskHeight, 0, 0, Math.PI); 
-            ctx.fillStyle = diskDoppler;
-            ctx.fill();
-
-            // 8. 吸积盘的核心极亮白光带
-            ctx.beginPath();
-            ctx.ellipse(0, 0, diskWidth*0.6, diskHeight*0.6, 0, 0, Math.PI);
-            ctx.fillStyle = 'rgba(255, 255, 255, 0.6)';
-            ctx.shadowBlur = 30;
-            ctx.shadowColor = 'rgba(255, 200, 100, 1)';
-            ctx.fill();
-            ctx.shadowBlur = 0;
-
-            ctx.restore();
-          }
-
-          animationId = requestAnimationFrame(animate);
-        };
-
-        animate();
-
-        if (burstTrigger) burstMultiplier = 6;
-
-        const handleResize = () => { w = canvas.width = window.innerWidth; h = canvas.height = window.innerHeight; };
-        window.addEventListener('resize', handleResize);
-        return () => { cancelAnimationFrame(animationId); window.removeEventListener('resize', handleResize); };
-      }, [isGodMode, burstTrigger]);
-
-      return <canvas ref={canvasRef} className="fixed inset-0 z-0 pointer-events-none mix-blend-screen" />;
-    };
-
-    // ==========================================
-    // 独立页面：Markdown 题解阅读舱
-    // ==========================================
-    const MarkdownViewer = ({ problem, onBack, bgImage, setBgImage }) => {
-      const contentRef = useRef(null);
-      const [showBgSettings, setShowBgSettings] = useState(false);
-
-      useEffect(() => {
-        // 在 React 渲染完成并将 HTML 挂载到 DOM 后，安全调用 Highlight.js
-        if (contentRef.current) {
-          if (window.hljs) {
-            contentRef.current.querySelectorAll('pre code').forEach((block) => {
-              window.hljs.highlightElement(block);
-            });
-          }
-          if (window.MathJax && window.MathJax.typesetPromise) { 
-            window.MathJax.typesetPromise([contentRef.current]).catch(console.error); 
-          }
-        }
-      }, [problem]);
-
-      const handleBgImageUpload = (e) => {
-        const file = e.target.files[0];
-        if (!file) return;
-        const reader = new FileReader();
-        reader.onload = (event) => {
-          const img = new Image();
-          img.onload = () => {
-            const canvas = document.createElement('canvas'); const ctx = canvas.getContext('2d');
-            let w = img.width; let h = img.height;
-            if (w > h && w > 1920) { h *= 1920/w; w = 1920; } else if (h > 1080) { w *= 1080/h; h = 1080; }
-            canvas.width = w; canvas.height = h; ctx.drawImage(img, 0, 0, w, h);
-            setBgImage(canvas.toDataURL('image/jpeg', 0.8)); setShowBgSettings(false);
-          };
-          img.src = event.target.result;
-        };
-        reader.readAsDataURL(file);
-      };
-
-      const getMarkdownHtml = () => {
-        if (!problem || !problem.markdown) return '<p class="text-slate-500 font-mono">> *无记录数据*</p>';
-        try {
-          if (typeof window.marked !== 'undefined') {
-            return window.marked.parse(problem.markdown);
-          }
-        } catch (error) {
-          console.error('Markdown 引擎执行失败:', error);
-        }
-        return `<pre style="white-space: pre-wrap; font-family: monospace;">${problem.markdown}</pre>`;
-      };
-
-      return (
-        <div className="min-h-screen relative font-sans animate-[fadeIn_0.3s_ease-out]">
-          {bgImage ? (
-            <div className="fixed inset-0 z-0 bg-cover bg-center bg-no-repeat bg-fixed opacity-70" style={{ backgroundImage: `url(${bgImage})` }} />
-          ) : ( <div className="fixed inset-0 z-0 bg-[#08080c]" /> )}
-
-          <div className="fixed top-0 left-0 right-0 z-50 reader-glass border-b border-cyan-500/30">
-            <div className="max-w-5xl mx-auto px-4 h-16 flex items-center justify-between">
-              <button onClick={onBack} className="flex items-center gap-2 text-cyan-400 hover:text-cyan-300 font-sci-fi font-bold px-4 py-2 bg-cyan-950/50 rounded-none border-l-4 border-cyan-500 transition-all hover:pr-6">
-                <ArrowLeft size={18} /> 撤离舱室 / BACK
-              </button>
-              <div className="flex items-center gap-4">
-                <button onClick={() => setShowBgSettings(!showBgSettings)} className="p-2 text-slate-300 hover:text-cyan-400 bg-black/50 border border-slate-600 transition-all">
-                  <ImageIcon size={20} />
-                </button>
-              </div>
-            </div>
-            
-            {showBgSettings && (
-              <div className="absolute top-16 right-4 mt-2 p-4 bg-slate-900 border border-cyan-500 rounded-none shadow-2xl w-80">
-                <label className="block text-sm font-sci-fi font-bold text-cyan-400 mb-3 uppercase">WallPaper Settings</label>
-                <label className="cursor-pointer flex flex-col items-center justify-center gap-2 w-full py-6 border-2 border-dashed border-cyan-500/40 hover:bg-cyan-900/30 transition-all text-slate-300">
-                  <Upload size={24} className="text-cyan-400"/> 
-                  <span className="font-bold text-sm">导入沉浸背景图</span>
-                  <input type="file" accept="image/*" onChange={handleBgImageUpload} className="hidden" />
-                </label>
-                {bgImage && (
-                  <button onClick={() => {setBgImage(''); setShowBgSettings(false)}} className="w-full mt-3 py-2 bg-red-950/50 text-red-400 font-bold border border-red-900 hover:bg-red-900/80">清除背景</button>
-                )}
-              </div>
-            )}
-          </div>
-
-          <div className="relative z-10 pt-28 pb-20 px-4 md:px-8">
-            <div className="max-w-4xl mx-auto reader-glass p-6 md:p-12 shadow-2xl hud-clip border-t-4 border-cyan-500">
-              <div className="border-b border-slate-700/60 pb-6 mb-8">
-                <div className="flex items-center gap-3 mb-4 font-sci-fi">
-                  <span className="px-3 py-1 bg-cyan-950 text-cyan-400 font-bold text-sm border border-cyan-800">{problem.platform}</span>
-                  <span className="text-slate-500 text-sm ml-auto tracking-widest flex items-center gap-1">
-                    <Clock size={12}/> {problem.date} {problem.timestamp || ''}
-                  </span>
-                </div>
-                <h1 className="text-3xl md:text-5xl font-sci-fi font-black text-white leading-tight mb-4 tracking-wide">{problem.title}</h1>
-                <div className="flex flex-wrap gap-2">
-                  {problem.tags && problem.tags.map((tag, idx) => (
-                    <span key={idx} className="text-xs px-2 py-1 bg-black/60 text-slate-300 border border-slate-700 flex items-center gap-1 font-mono"><Tag size={12}/> {tag}</span>
-                  ))}
-                </div>
-              </div>
-              <div 
-                ref={contentRef}
-                className="md-prose"
-                dangerouslySetInnerHTML={{ __html: getMarkdownHtml() }}
-              />
-            </div>
-          </div>
-        </div>
-      );
-    };
-
-    // ==========================================
-    // 主应用程序
-    // ==========================================
-    const App = () => {
-      const [view, setView] = useState('home');
-      const [viewingProblem, setViewingProblem] = useState(null);
-
-      const getTodayStr = () => {
-        const d = new Date();
-        return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`;
-      };
-
-      const getCurrentTimeStr = () => {
-        const d = new Date();
-        return `${String(d.getHours()).padStart(2, '0')}:${String(d.getMinutes()).padStart(2, '0')}:${String(d.getSeconds()).padStart(2, '0')}`;
-      };
-
-      const [problems, setProblems] = useState(() => {
-        try {
-          const savedData = localStorage.getItem('acmer_data_v9');
-          return savedData ? JSON.parse(savedData) : [];
-        } catch (e) {
-          return [];
-        }
-      });
-      const [readerBg, setReaderBg] = useState(() => localStorage.getItem('acmer_reader_bg') || '');
-
-      useEffect(() => { localStorage.setItem('acmer_data_v9', JSON.stringify(problems)); }, [problems]);
-      useEffect(() => { localStorage.setItem('acmer_reader_bg', readerBg); }, [readerBg]);
-
-      const [newPlatform, setNewPlatform] = useState('Codeforces');
-      const [newTitle, setNewTitle] = useState('');
-      const [newDifficulty, setNewDifficulty] = useState('中等');
-      const [newTags, setNewTags] = useState('');
-      const [markdownContent, setMarkdownContent] = useState('');
-      const [searchQuery, setSearchQuery] = useState('');
-
-      const todayCount = problems.filter(p => p.date === getTodayStr()).length;
-      
-      const [isGodMode, setIsGodMode] = useState(todayCount >= 10);
-      const [flashEffect, setFlashEffect] = useState(false);
-      const prevCountRef = useRef(todayCount);
-
-      useEffect(() => {
-        setIsGodMode(todayCount >= 10);
-        if (prevCountRef.current < 10 && todayCount >= 10) {
-          setFlashEffect(true);
-          setTimeout(() => setFlashEffect(false), 1500);
-        }
-        prevCountRef.current = todayCount;
-      }, [todayCount]);
-
-      const handleAddProblem = (e) => {
-        e.preventDefault();
-        if (!newTitle.trim()) return;
-        const newProblem = {
-          id: Date.now(), 
-          title: newTitle, 
-          platform: newPlatform,
-          date: getTodayStr(), 
-          timestamp: getCurrentTimeStr(),
-          difficulty: newDifficulty,
-          tags: newTags.split(',').map(t => t.trim()).filter(t => t !== ''),
-          markdown: markdownContent 
-        };
-        setProblems([newProblem, ...problems]);
-        setNewTitle(''); setNewTags(''); setMarkdownContent('');
-      };
-
-      const handleDeleteProblem = (id) => {
-        if (window.confirm('警告：数据删除后无法恢复，确认抹除该记录？')) {
-          setProblems(problems.filter(p => p.id !== id));
-        }
-      };
-
-      const handleMdFileUpload = (e) => {
-        const file = e.target.files[0];
-        if (!file) return;
-        const reader = new FileReader();
-        reader.onload = (event) => setMarkdownContent(event.target.result);
-        reader.readAsText(file);
-      };
-
-      const openReader = (problem) => { setViewingProblem(problem); setView('viewer'); window.scrollTo(0, 0); };
-
-      const getStatusEffect = (count) => {
-        if (count === 0) return { label: 'SYSTEM SLEEPING', color: 'text-slate-500', glow: '' };
-        if (count <= 3) return { label: 'ENGINE IGNITION', color: 'text-cyan-400', glow: 'shadow-[0_0_30px_rgba(6,182,212,0.15)]' };
-        if (count <= 9) return { label: 'UNSTOPPABLE', color: 'text-blue-400', glow: 'shadow-[0_0_40px_rgba(59,130,246,0.3)]' };
-        return { 
-          label: 'EVENT HORIZON // 视界飞升', 
-          color: 'text-transparent bg-clip-text bg-gradient-to-r from-fuchsia-400 via-cyan-400 to-yellow-400 animate-pulse font-black', 
-          glow: 'hud-clip-ascended' 
-        };
-      };
-      const currentStatus = getStatusEffect(todayCount);
-
-      const filteredProblems = problems.filter(p => {
-        const query = searchQuery.toLowerCase();
-        const tagMatch = p.tags && p.tags.some(t => t.toLowerCase().includes(query));
-        return p.title.toLowerCase().includes(query) || p.platform.toLowerCase().includes(query) || tagMatch;
-      });
-
-      if (view === 'viewer' && viewingProblem) {
-        return <MarkdownViewer problem={viewingProblem} onBack={() => setView('home')} bgImage={readerBg} setBgImage={setReaderBg} />;
+    setIsAnimating(true);
+    const duration = 800; // 动画持续 800ms
+    const increment = end / (duration / 16);
+    const timer = setInterval(() => {
+      start += increment;
+      if (start >= end) {
+        clearInterval(timer);
+        setDisplayValue(value);
+        setTimeout(() => setIsAnimating(false), 400); // 延迟移除发光类名，完成爆点动画
+      } else {
+        setDisplayValue(Math.floor(start));
       }
+    }, 16);
+    return () => clearInterval(timer);
+  }, [value]);
 
-      return (
-        <div className="min-h-screen relative font-sans">
-          
-          {flashEffect && (
-            <div className="fixed inset-0 z-50 pointer-events-none animate-flash mix-blend-overlay flex items-center justify-center">
-               <div className="animate-shockwave"></div>
+  return (
+    <span className={`inline-block ${isAnimating ? 'animate-count-glow text-white' : 'text-white transition-all duration-500'}`}>
+      {prefix}{displayValue}
+    </span>
+  );
+};
+
+export default function App() {
+  const [records, setRecords] = useState(initialRecords);
+  const [searchQuery, setSearchQuery] = useState('');
+  const [selectedRecord, setSelectedRecord] = useState(null); 
+  
+  const [formData, setFormData] = useState({
+    date: new Date().toISOString().split('T')[0],
+    platform: 'Codeforces',
+    problemId: '',
+    rating: '',
+    tags: '',
+    status: 'AC',
+    solution: ''
+  });
+
+  // 文件上传 Refs 锚点
+  const mdInputRef = useRef(null);
+  const imgInputRef = useRef(null);
+
+  // 解析本地 Markdown 文件内容
+  const handleMdImport = (e) => {
+    const file = e.target.files[0];
+    if (!file) return;
+    const reader = new FileReader();
+    reader.onload = (event) => {
+      setFormData(prev => ({
+        ...prev, 
+        solution: prev.solution + (prev.solution ? '\n\n' : '') + event.target.result
+      }));
+    };
+    reader.readAsText(file);
+    e.target.value = null;
+  };
+
+  // 将本地图片转换为 Base64 数据流并植入 Markdown
+  const handleImageInsert = (e) => {
+    const file = e.target.files[0];
+    if (!file) return;
+    const reader = new FileReader();
+    reader.onload = (event) => {
+      const base64 = event.target.result;
+      const imgMarkdown = `\n![本地图片](${base64})\n`;
+      setFormData(prev => ({...prev, solution: prev.solution + imgMarkdown}));
+    };
+    reader.readAsDataURL(file);
+    e.target.value = null;
+  };
+
+  // 核心统计指标计算
+  const stats = useMemo(() => {
+    const acCount = records.filter(r => r.status === 'AC').length;
+    const upsolvingCount = records.filter(r => r.status === 'Upsolving').length;
+    const today = new Date().toISOString().split('T')[0];
+    const todayCount = records.filter(r => r.date === today).length;
+    const maxRating = records.reduce((max, r) => {
+      const rVal = parseInt(r.rating);
+      return (!isNaN(rVal) && rVal > max) ? rVal : max;
+    }, 0);
+    return { acCount, upsolvingCount, todayCount, maxRating };
+  }, [records]);
+
+  // 搜索过滤引擎
+  const filteredRecords = useMemo(() => {
+    if (!searchQuery.trim()) return records;
+    const query = searchQuery.toLowerCase();
+    return records.filter(r => 
+      r.problemId.toLowerCase().includes(query) ||
+      (r.tags && r.tags.toLowerCase().includes(query)) ||
+      r.platform.toLowerCase().includes(query)
+    );
+  }, [records, searchQuery]);
+
+  // 表单提交流辑
+  const handleSubmit = (e) => {
+    e.preventDefault();
+    if (!formData.problemId) return;
+
+    const newRecord = {
+      ...formData,
+      id: Date.now().toString(),
+      rating: parseInt(formData.rating) || 0
+    };
+
+    setRecords([newRecord, ...records]);
+    setFormData({ ...formData, problemId: '', rating: '', tags: '', solution: '' }); 
+  };
+
+  const getStatusColor = (status) => {
+    switch(status) {
+      case 'AC': return 'text-green-400 bg-green-400/10 border-green-400/30 shadow-[0_0_10px_rgba(74,222,128,0.2)]';
+      case 'Upsolving': return 'text-blue-400 bg-blue-400/10 border-blue-400/30 shadow-[0_0_10px_rgba(96,165,250,0.2)]';
+      case 'WA': return 'text-red-400 bg-red-400/10 border-red-400/30 shadow-[0_0_10px_rgba(248,113,113,0.2)]';
+      case 'TLE': return 'text-yellow-400 bg-yellow-400/10 border-yellow-400/30 shadow-[0_0_10px_rgba(250,204,21,0.2)]';
+      default: return 'text-gray-400 bg-gray-400/10 border-gray-400/30';
+    }
+  };
+
+  return (
+    <div className="min-h-screen bg-[#07090e] text-gray-200 font-sans relative overflow-hidden selection:bg-cyan-500/30">
+      
+      {/* 注入全局的自定义滚动条样式 (针对题解界面) 及全新特效动画 */}
+      <style dangerouslySetInnerHTML={{__html: `
+        @import url('https://fonts.googleapis.com/css2?family=Rajdhani:wght@500;700;900&family=Fira+Code:wght@400;600&display=swap');
+        .font-sci-fi { font-family: 'Rajdhani', sans-serif; }
+
+        ::-webkit-scrollbar { width: 6px; height: 6px; }
+        ::-webkit-scrollbar-track { background: rgba(0, 0, 0, 0.2); border-radius: 10px; }
+        ::-webkit-scrollbar-thumb { background: rgba(6, 182, 212, 0.3); border-radius: 10px; }
+        ::-webkit-scrollbar-thumb:hover { background: rgba(6, 182, 212, 0.6); }
+
+        @keyframes count-up-glow {
+          0% { text-shadow: 0 0 0px rgba(6,182,212,0); transform: scale(1); filter: brightness(1); }
+          50% { text-shadow: 0 0 25px rgba(6,182,212,1); transform: scale(1.15); filter: brightness(1.5); }
+          100% { text-shadow: 0 0 10px rgba(6,182,212,0.5); transform: scale(1); filter: brightness(1); }
+        }
+        .animate-count-glow { 
+          animation: count-up-glow 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275) forwards; 
+        }
+
+        /* === 能量槽动态流光 === */
+        @keyframes progress-stripes {
+          0% { background-position: 0 0; }
+          100% { background-position: 40px 0; }
+        }
+        @keyframes gradient-flow {
+          0% { background-position: 0% 50%; }
+          50% { background-position: 100% 50%; }
+          100% { background-position: 0% 50%; }
+        }
+        .energy-bar-stripes {
+          background-image: linear-gradient(45deg, rgba(255,255,255,0.2) 25%, transparent 25%, transparent 50%, rgba(255,255,255,0.2) 50%, rgba(255,255,255,0.2) 75%, transparent 75%, transparent);
+          background-size: 40px 40px;
+          animation: progress-stripes 1s linear infinite;
+        }
+        .bg-ascended-flow {
+          background: linear-gradient(90deg, #d946ef, #8b5cf6, #06b6d4, #f59e0b, #d946ef);
+          background-size: 300% 100%;
+          animation: gradient-flow 3s ease infinite;
+        }
+      `}} />
+
+      {/* 赛博朋克光晕背景 */}
+      <div className="absolute top-[-15%] left-[-10%] w-[50%] h-[50%] bg-cyan-600/10 rounded-full blur-[150px] pointer-events-none"></div>
+      <div className="absolute bottom-[-15%] right-[-10%] w-[50%] h-[50%] bg-purple-600/10 rounded-full blur-[150px] pointer-events-none"></div>
+      
+      <div className="max-w-7xl mx-auto space-y-6 p-4 sm:p-6 md:p-8 relative z-10">
+        
+        {/* Header */}
+        <header className="flex flex-col md:flex-row items-start md:items-center justify-between border-b border-white/5 pb-4 gap-4">
+          <div className="flex items-center gap-4">
+            <div className="p-3 bg-gradient-to-br from-cyan-500/20 to-purple-500/20 rounded-xl border border-cyan-500/30 shadow-[0_0_20px_rgba(6,182,212,0.3)] backdrop-blur-md">
+              <Terminal className="w-8 h-8 text-cyan-400 drop-shadow-[0_0_8px_currentColor]" />
             </div>
-          )}
+            <div>
+              <h1 className="text-3xl font-black tracking-tight text-transparent bg-clip-text bg-gradient-to-r from-cyan-400 to-purple-400 drop-shadow-[0_0_10px_rgba(34,211,238,0.2)]">
+                CP Core Tracker
+              </h1>
+              <p className="text-sm text-cyan-500/70 font-mono mt-1 flex items-center gap-1.5 uppercase tracking-widest">
+                <Sparkles className="w-3.5 h-3.5" /> High-Performance ACM Console
+              </p>
+            </div>
+          </div>
+          <div className="text-left md:text-right font-mono">
+            <p className="text-sm font-bold text-gray-300 drop-shadow-md">{new Date().toLocaleDateString('zh-CN', { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' })}</p>
+            <p className="text-[10px] text-purple-400/80 mt-1 uppercase tracking-widest border border-purple-500/30 bg-purple-500/10 px-2 py-0.5 rounded-full inline-block">SYSTEM: NEON ACTIVE</p>
+          </div>
+        </header>
 
-          <ParticleEngine isGodMode={isGodMode} burstTrigger={flashEffect} />
-
-          <div className="max-w-7xl mx-auto space-y-8 relative z-10 p-4 md:p-8">
+        {/* HUD Statistics Dashboard - 极致独立核心能量舱 */}
+        <div className="space-y-4">
+          
+          {/* 独立的巨型进度能量条 (DAILY SOLVED OVERRIDE) */}
+          <div className="relative w-full bg-[#040609]/90 backdrop-blur-2xl border-2 border-cyan-500/40 rounded-2xl p-6 md:p-8 shadow-[0_0_40px_rgba(6,182,212,0.15)] overflow-hidden group">
+            {/* 扫描线背景特效 */}
+            <div className="absolute inset-0 w-full h-[200%] bg-gradient-to-b from-transparent via-cyan-500/5 to-transparent animate-[scan-line_4s_linear_infinite] pointer-events-none"></div>
             
-            <header className="flex items-center justify-between hud-panel p-5 hud-clip">
-              <div className="scanlines"></div>
-              <div className="flex items-center gap-4 relative z-10">
-                <div className={`p-3 border ${isGodMode ? 'bg-fuchsia-950/50 border-fuchsia-500 text-fuchsia-400 shadow-[0_0_20px_#d946ef]' : 'bg-cyan-950/50 border-cyan-500 text-cyan-400'}`}>
-                  <TerminalSquare size={28} />
+            <div className="flex flex-col md:flex-row items-start md:items-center justify-between gap-8 relative z-10">
+              {/* 左侧模块：标题与巨大的数值 */}
+              <div className="flex items-center gap-5">
+                <div className="p-4 bg-cyan-900/40 border border-cyan-500/50 rounded-xl shadow-[0_0_25px_rgba(6,182,212,0.3)]">
+                  <Target className="w-10 h-10 text-cyan-400 drop-shadow-[0_0_15px_currentColor]" />
                 </div>
                 <div>
-                  <h1 className="text-2xl md:text-3xl font-sci-fi font-black text-white tracking-widest uppercase">
-                    ACMer <span className={isGodMode ? 'text-fuchsia-400 drop-shadow-[0_0_10px_#d946ef]' : 'text-cyan-400'}>NEXUS</span>
-                  </h1>
-                  <p className="text-slate-500 text-xs font-mono tracking-widest mt-1">v9.0 // GARGANTUA_ABSOLUTE</p>
-                </div>
-              </div>
-              <div className="text-right hidden md:block relative z-10">
-                <p className="text-xs text-slate-500 font-sci-fi font-bold uppercase tracking-widest">TOTAL AC</p>
-                <p className="text-4xl font-sci-fi font-black text-white">{problems.length}</p>
-              </div>
-            </header>
-
-            <section className={`hud-panel p-8 md:p-10 hud-clip ${currentStatus.glow} transition-all duration-700`}>
-              <div className="scanlines"></div>
-              <div className="flex flex-col md:flex-row items-center justify-between gap-8 relative z-10">
-                
-                <div className="flex items-center gap-6 w-full md:w-auto">
-                  <div className={`p-6 border-l-4 ${isGodMode ? 'bg-fuchsia-950/30 border-fuchsia-500 shadow-[0_0_40px_rgba(217,70,239,0.4)]' : 'hud-inner-glass border-slate-600'}`}>
-                    {isGodMode ? <Flame size={60} className="text-fuchsia-500" /> : <Zap size={60} className={currentStatus.color} />}
-                  </div>
-                  <div>
-                    <p className="text-xs font-mono text-slate-500 mb-1 tracking-widest uppercase flex items-center gap-2">
-                      <Target size={14}/> Current Protocol
+                  <p className="text-xs text-cyan-500/80 uppercase tracking-[0.3em] font-black mb-1 font-mono flex items-center gap-2">
+                    <span className="w-2 h-2 rounded-full bg-cyan-400 animate-pulse shadow-[0_0_10px_rgba(34,211,238,1)]"></span>
+                    CORE OVERRIDE / 核心攻克
+                  </p>
+                  <div className="flex items-baseline gap-3 mt-1">
+                    <p className="text-6xl font-black text-transparent bg-clip-text bg-gradient-to-r from-cyan-300 to-white drop-shadow-[0_0_15px_rgba(6,182,212,0.6)]">
+                      <AnimatedNumber value={stats.todayCount} />
                     </p>
-                    <h2 className={`text-4xl md:text-6xl font-sci-fi font-black tracking-wider ${currentStatus.color}`}>
-                      {currentStatus.label}
-                    </h2>
-                    <p className="text-slate-400 mt-2 text-lg font-sci-fi font-bold tracking-widest uppercase">
-                      TODAY AC: <span className="text-4xl text-white ml-2">{todayCount}</span>
-                    </p>
+                    <span className="text-sm text-cyan-500/60 font-mono tracking-widest font-bold">/ 5 STAGE GOAL</span>
                   </div>
-                </div>
-                
-                <div className="w-full md:w-[400px] flex flex-col gap-2">
-                  <div className="flex justify-between text-xs font-sci-fi font-bold tracking-widest text-slate-400 uppercase">
-                    <span>Energy Power</span>
-                    <span className={isGodMode ? 'text-fuchsia-400' : 'text-cyan-400'}>Target: 10</span>
-                  </div>
-                  <div className="w-full h-8 hud-inner-glass border border-slate-700 p-1" style={{ transform: 'skewX(-15deg)' }}>
-                    <div 
-                      className={`h-full transition-all duration-1000 ease-out energy-bar-stripes ${isGodMode ? 'bg-ascended-flow shadow-[0_0_25px_#d946ef]' : 'bg-gradient-to-r from-cyan-800 to-cyan-400 shadow-[0_0_15px_#06b6d4]'}`}
-                      style={{ width: `${Math.min((todayCount / 10) * 100, 100)}%` }}
-                    ></div>
-                  </div>
-                </div>
-
-              </div>
-            </section>
-
-            <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
-              
-              <div className="lg:col-span-2 hud-panel flex flex-col border-t-4 border-t-cyan-500" style={{ maxHeight: '800px' }}>
-                <div className="scanlines"></div>
-                <div className="p-6 border-b border-cyan-500/20 hud-inner-glass flex flex-col sm:flex-row sm:items-center justify-between gap-4 relative z-10">
-                  <h3 className="font-sci-fi font-black text-white flex items-center gap-3 text-xl tracking-widest uppercase">
-                    <CheckCircle2 size={24} className="text-cyan-400" />
-                    Data Archive
-                  </h3>
-                  <div className="relative w-full sm:w-80">
-                    <Search className="absolute left-4 top-1/2 -translate-y-1/2 text-cyan-500 w-4 h-4" />
-                    <input type="text" placeholder="检索 ID / 标签..." value={searchQuery} onChange={(e) => setSearchQuery(e.target.value)}
-                      className="w-full pl-12 pr-4 py-2.5 bg-black/40 border border-slate-700 text-slate-100 font-mono text-sm focus:border-cyan-500 outline-none backdrop-blur-sm transition-all" style={{ transform: 'skewX(-5deg)' }}
-                    />
-                  </div>
-                </div>
-                
-                <div className="divide-y divide-slate-800/50 overflow-y-auto flex-1 p-4 space-y-3 relative z-10">
-                  {filteredProblems.map(problem => (
-                    <div key={problem.id} className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 p-4 hud-inner-glass hover:bg-cyan-500/10 border border-slate-700/30 hover:border-cyan-400/50 transition-all group">
-                      
-                      <div className="flex items-center gap-5 w-full sm:w-auto">
-                        <div className="text-cyan-400 border border-cyan-800 bg-black/50 font-sci-fi font-bold px-3 py-1 text-sm tracking-widest uppercase shrink-0" style={{ transform: 'skewX(-10deg)' }}>
-                          <span style={{ display: 'inline-block', transform: 'skewX(10deg)' }}>{problem.platform}</span>
-                        </div>
-                        <div className="flex flex-col gap-1 w-full overflow-hidden">
-                          <div className="flex items-center justify-between sm:justify-start gap-4">
-                            <span className="font-bold text-slate-100 text-lg group-hover:text-cyan-400 transition-colors font-sci-fi tracking-wide truncate">
-                              {problem.title}
-                            </span>
-                            <span className="text-xs font-mono text-slate-500 shrink-0 flex items-center gap-1">
-                              <Clock size={10} className="hidden sm:inline-block"/> {problem.timestamp || ''}
-                            </span>
-                          </div>
-                          <div className="flex gap-2">
-                            {problem.tags && problem.tags.slice(0,3).map((tag, idx) => (
-                              <span key={idx} className="text-xs text-cyan-500/80 font-mono">#{tag}</span>
-                            ))}
-                          </div>
-                        </div>
-                      </div>
-
-                      <div className="flex items-center gap-3 shrink-0 mt-2 sm:mt-0">
-                        <span className={`text-xs px-4 py-1.5 font-black uppercase tracking-widest border ${
-                          problem.difficulty === '困难' ? 'bg-red-950/30 text-red-400 border-red-900/50' :
-                          problem.difficulty === '中等' ? 'bg-orange-950/30 text-orange-400 border-orange-900/50' :
-                          'bg-green-950/30 text-green-400 border-green-900/50'
-                        }`} style={{ transform: 'skewX(-10deg)' }}>
-                           <span style={{ display: 'inline-block', transform: 'skewX(10deg)' }}>{problem.difficulty}</span>
-                        </span>
-                        
-                        <button onClick={() => openReader(problem)}
-                          className="flex items-center gap-2 px-4 py-2 bg-cyan-950/30 hover:bg-cyan-600/80 text-cyan-400 hover:text-white font-sci-fi font-bold border border-cyan-800/50 hover:border-cyan-400 transition-all uppercase tracking-widest text-sm"
-                          style={{ transform: 'skewX(-10deg)' }}
-                        >
-                          <span className="flex items-center gap-1" style={{ display: 'inline-block', transform: 'skewX(10deg)' }}>
-                            <FileText size={14} className="inline mr-1"/>{problem.markdown ? 'READ_MD' : 'DETAIL'}
-                          </span>
-                        </button>
-
-                        <button onClick={() => handleDeleteProblem(problem.id)} className="p-2 bg-red-950/20 hover:bg-red-600/80 text-red-500 hover:text-white transition-all border border-red-900/30" title="PURGE DATA">
-                          <Trash2 size={16} />
-                        </button>
-                      </div>
-
-                    </div>
-                  ))}
-                  {filteredProblems.length === 0 && (
-                    <div className="p-16 text-center text-slate-600 font-sci-fi font-black text-xl tracking-widest flex flex-col items-center gap-4">
-                      <Swords size={64} className="opacity-30" />
-                      SYSTEM_EMPTY // NO DATA
-                    </div>
-                  )}
                 </div>
               </div>
 
-              <div className="hud-panel p-6 md:p-8 border-t-4 border-t-blue-500">
-                <div className="scanlines"></div>
-                <h3 className="text-2xl font-sci-fi font-black text-white mb-8 flex items-center gap-3 tracking-widest uppercase relative z-10">
-                  <Plus size={24} className="text-blue-400" />
-                  INPUT_DATA
-                </h3>
-                
-                <form onSubmit={handleAddProblem} className="space-y-6 relative z-10">
-                  <div>
-                    <label className="block text-xs font-bold text-slate-500 mb-2 font-mono uppercase">Platform</label>
-                    <select value={newPlatform} onChange={(e) => setNewPlatform(e.target.value)} className="cyber-select w-full bg-black/40 border border-slate-700 text-slate-100 px-4 py-3 focus:border-blue-500 outline-none font-sci-fi font-bold text-base tracking-widest uppercase backdrop-blur-sm transition-colors" style={{ transform: 'skewX(-5deg)' }}>
-                      <option value="Codeforces">Codeforces</option> 
-                      <option value="AtCoder">AtCoder</option> 
-                      <option value="牛客">牛客</option> 
-                      <option value="luogu">luogu</option>
-                    </select>
-                  </div>
-
-                  <div>
-                    <label className="block text-xs font-bold text-slate-500 mb-2 font-mono uppercase">Problem Title</label>
-                    <input type="text" value={newTitle} onChange={(e) => setNewTitle(e.target.value)} placeholder="e.g. A. Watermelon" className="w-full bg-black/40 border border-slate-700 text-slate-100 px-4 py-3 focus:border-blue-500 outline-none font-bold text-base backdrop-blur-sm transition-colors" style={{ transform: 'skewX(-5deg)' }} />
-                  </div>
-
-                  <div className="p-4 hud-inner-glass border border-slate-700/50 relative">
-                    <label className="flex items-center justify-between text-xs font-bold text-cyan-500 mb-3 font-mono uppercase">
-                      <span className="flex items-center gap-2"><FileText size={14}/> MD_Payload</span>
-                      <label className="cursor-pointer bg-cyan-950/30 text-cyan-400 px-2 py-1 border border-cyan-800 hover:bg-cyan-900/80 transition-colors flex items-center gap-1" style={{ transform: 'skewX(-10deg)' }}>
-                        <span style={{ display: 'inline-block', transform: 'skewX(10deg)' }}><Upload size={12} className="inline mr-1"/>Import_MD</span>
-                        <input type="file" accept=".md,.txt" onChange={handleMdFileUpload} className="hidden" />
-                      </label>
-                    </label>
-                    <textarea value={markdownContent} onChange={(e) => setMarkdownContent(e.target.value)} placeholder="输入 Markdown 数据，支持 LaTeX 与代码块..." rows="5" className="w-full bg-transparent border-t border-slate-800 text-slate-300 pt-3 focus:outline-none font-mono text-sm leading-relaxed" />
-                  </div>
-
-                  <div>
-                    <label className="block text-xs font-bold text-slate-500 mb-2 font-mono uppercase">Tags</label>
-                    <input type="text" value={newTags} onChange={(e) => setNewTags(e.target.value)} placeholder="DP, 图论, 数学..." className="w-full bg-black/40 border border-slate-700 text-slate-100 rounded-lg px-4 py-3 focus:border-blue-500 transition-all font-bold backdrop-blur-sm" />
-                  </div>
-
-                  <div>
-                    <label className="block text-xs font-bold text-slate-500 mb-3 font-mono uppercase">Difficulty Level</label>
-                    <div className="grid grid-cols-3 gap-3">
-                      {['简单', '中等', '困难'].map(diff => (
-                        <button key={diff} type="button" onClick={() => setNewDifficulty(diff)}
-                          className={`py-2 text-sm border font-sci-fi font-bold tracking-widest uppercase transition-all ${
-                            newDifficulty === diff 
-                              ? (diff === '简单' ? 'bg-green-900/50 border-green-500 text-green-400' :
-                                 diff === '中等' ? 'bg-orange-900/50 border-orange-500 text-orange-400' :
-                                 'bg-red-900/50 border-red-500 text-red-400')
-                              : 'hud-inner-glass border-slate-700/50 text-slate-400 hover:border-slate-500'
-                          }`}
-                          style={{ transform: 'skewX(-10deg)' }}
-                        >
-                          <span style={{ display: 'inline-block', transform: 'skewX(10deg)' }}>{diff}</span>
-                        </button>
-                      ))}
-                    </div>
-                  </div>
-
-                  <button type="submit" disabled={!newTitle.trim()}
-                    className="w-full mt-8 bg-blue-600/80 hover:bg-blue-500 text-white font-sci-fi font-black py-4 transition-all active:scale-95 disabled:opacity-50 flex items-center justify-center gap-3 uppercase tracking-widest text-lg border border-blue-400/50"
-                    style={{ transform: 'skewX(-10deg)' }}
-                  >
-                    <span className="flex items-center gap-2" style={{ display: 'inline-block', transform: 'skewX(10deg)' }}>
-                      <Swords size={20} className="inline mr-2" /> EXECUTE_WRITE
-                    </span>
-                  </button>
-                </form>
+              {/* 右侧模块：能量槽动态流光 (替换为连续斜纹) */}
+              <div className="w-full md:w-[400px] flex flex-col gap-2 justify-center md:ml-6">
+                <div className="flex justify-between text-xs font-sci-fi font-bold tracking-[0.15em] text-slate-400 uppercase">
+                  <span>Energy Power</span>
+                  <span className={stats.todayCount >= 5 ? 'text-fuchsia-400 drop-shadow-[0_0_8px_currentColor]' : 'text-cyan-400 drop-shadow-[0_0_8px_currentColor]'}>
+                    Target: 5
+                  </span>
+                </div>
+                <div className="w-full h-8 bg-black/30 backdrop-blur-md border border-slate-700 p-1" style={{ transform: 'skewX(-15deg)' }}>
+                  <div 
+                    className={`h-full transition-all duration-1000 ease-out energy-bar-stripes ${stats.todayCount >= 5 ? 'bg-ascended-flow shadow-[0_0_25px_#d946ef]' : 'bg-gradient-to-r from-cyan-800 to-cyan-400 shadow-[0_0_15px_#06b6d4]'}`}
+                    style={{ width: `${Math.min((stats.todayCount / 5) * 100, 100)}%` }}
+                  ></div>
+                </div>
               </div>
+            </div>
+          </div>
 
+          {/* 附属的三个子系统指标 */}
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+            <div className="bg-white/5 backdrop-blur-xl border border-white/10 rounded-2xl p-5 flex items-center gap-4 hover:border-green-500/50 transition-all duration-300 shadow-[0_8px_30px_rgb(0,0,0,0.5)] hover:shadow-[0_0_25px_rgba(74,222,128,0.2)] group">
+              <div className="p-3 bg-green-500/20 rounded-xl group-hover:scale-110 transition-transform"><CheckCircle2 className="w-7 h-7 text-green-400 drop-shadow-[0_0_10px_currentColor]" /></div>
+              <div>
+                <p className="text-[10px] text-gray-400 uppercase tracking-widest font-bold mb-1 font-mono">TOTAL AC / 累计斩获</p>
+                <p className="text-3xl font-black text-white"><AnimatedNumber value={stats.acCount} /></p>
+              </div>
+            </div>
+            <div className="bg-white/5 backdrop-blur-xl border border-white/10 rounded-2xl p-5 flex items-center gap-4 hover:border-blue-500/50 transition-all duration-300 shadow-[0_8px_30px_rgb(0,0,0,0.5)] hover:shadow-[0_0_25px_rgba(96,165,250,0.2)] group">
+              <div className="p-3 bg-blue-500/20 rounded-xl group-hover:scale-110 transition-transform"><Clock className="w-7 h-7 text-blue-400 drop-shadow-[0_0_10px_currentColor]" /></div>
+              <div>
+                <p className="text-[10px] text-gray-400 uppercase tracking-widest font-bold mb-1 font-mono">UPSOLVE / 技术债</p>
+                <p className="text-3xl font-black text-white"><AnimatedNumber value={stats.upsolvingCount} /></p>
+              </div>
+            </div>
+            <div className="bg-white/5 backdrop-blur-xl border border-white/10 rounded-2xl p-5 flex items-center gap-4 hover:border-amber-500/50 transition-all duration-300 shadow-[0_8px_30px_rgb(0,0,0,0.5)] hover:shadow-[0_0_25px_rgba(251,191,36,0.2)] group">
+              <div className="p-3 bg-amber-500/20 rounded-xl group-hover:scale-110 transition-transform"><Trophy className="w-7 h-7 text-amber-400 drop-shadow-[0_0_10px_currentColor]" /></div>
+              <div>
+                <p className="text-[10px] text-gray-400 uppercase tracking-widest font-bold mb-1 font-mono">PEAK RATING / 战力峰值</p>
+                <p className="text-3xl font-black text-transparent bg-clip-text bg-gradient-to-r from-amber-300 to-orange-500 drop-shadow-md"><AnimatedNumber value={stats.maxRating} /></p>
+              </div>
             </div>
           </div>
         </div>
-      );
-    };
 
-    const root = createRoot(document.getElementById('root'));
-    root.render(<App />);
-  </script>
-</body>
-</html>
+        <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+          
+          {/* Left Column: Form Submitter */}
+          <div className="lg:col-span-1 space-y-6">
+            <div className="bg-[#0b0e14]/80 backdrop-blur-2xl border border-white/10 rounded-2xl p-6 shadow-2xl relative overflow-hidden group">
+              <div className="absolute top-0 left-0 w-full h-[2px] bg-gradient-to-r from-transparent via-cyan-500 to-transparent opacity-50 group-hover:opacity-100 transition-opacity duration-500"></div>
+              
+              <h2 className="text-lg font-black text-white mb-6 flex items-center gap-2 uppercase tracking-wide">
+                <Plus className="w-5 h-5 text-cyan-400 drop-shadow-[0_0_8px_currentColor]" />
+                Inject Node / 节点录入
+              </h2>
+              
+              <form onSubmit={handleSubmit} className="space-y-5">
+                <div className="grid grid-cols-2 gap-4">
+                  <div>
+                    <label className="block text-[10px] uppercase font-mono tracking-widest text-gray-400 mb-1.5">Date</label>
+                    <input 
+                      type="date" 
+                      value={formData.date}
+                      onChange={e => setFormData({...formData, date: e.target.value})}
+                      className="w-full bg-black/50 border border-white/10 rounded-lg px-3 py-2 text-sm focus:outline-none focus:border-cyan-500 focus:ring-1 focus:ring-cyan-500/50 text-gray-200 transition-all"
+                    />
+                  </div>
+                  <div>
+                    <label className="block text-[10px] uppercase font-mono tracking-widest text-gray-400 mb-1.5">Platform</label>
+                    <select 
+                      value={formData.platform}
+                      onChange={e => setFormData({...formData, platform: e.target.value})}
+                      className="w-full bg-black/50 border border-white/10 rounded-lg px-3 py-2 text-sm focus:outline-none focus:border-cyan-500 focus:ring-1 focus:ring-cyan-500/50 text-gray-200 transition-all appearance-none"
+                    >
+                      {PLATFORMS.map(p => <option key={p} value={p}>{p}</option>)}
+                    </select>
+                  </div>
+                </div>
+
+                <div>
+                  <label className="block text-[10px] uppercase font-mono tracking-widest text-gray-400 mb-1.5">Problem ID <span className="text-red-400">*</span></label>
+                  <input 
+                    type="text" 
+                    required
+                    placeholder="e.g. 1945C / ABC345-D"
+                    value={formData.problemId}
+                    onChange={e => setFormData({...formData, problemId: e.target.value})}
+                    className="w-full bg-black/50 border border-white/10 rounded-lg px-3 py-2.5 text-sm focus:outline-none focus:border-cyan-500 focus:ring-1 focus:ring-cyan-500/50 text-cyan-100 placeholder-gray-600 transition-all font-mono"
+                  />
+                </div>
+
+                <div>
+                  <label className="block text-[10px] uppercase font-mono tracking-widest text-gray-400 mb-1.5">Difficulty / Rating</label>
+                  <input 
+                    type="number" 
+                    placeholder="e.g. 1400"
+                    value={formData.rating}
+                    onChange={e => setFormData({...formData, rating: e.target.value})}
+                    className="w-full bg-black/50 border border-white/10 rounded-lg px-3 py-2.5 text-sm focus:outline-none focus:border-cyan-500 focus:ring-1 focus:ring-cyan-500/50 text-purple-200 placeholder-gray-600 transition-all font-mono"
+                  />
+                </div>
+
+                <div>
+                  <label className="block text-[10px] uppercase font-mono tracking-widest text-gray-400 mb-1.5">Tags</label>
+                  <input 
+                    type="text" 
+                    placeholder="e.g. dp, math, greedy"
+                    value={formData.tags}
+                    onChange={e => setFormData({...formData, tags: e.target.value})}
+                    className="w-full bg-black/50 border border-white/10 rounded-lg px-3 py-2.5 text-sm focus:outline-none focus:border-cyan-500 focus:ring-1 focus:ring-cyan-500/50 text-cyan-300 placeholder-gray-600 transition-all font-mono"
+                  />
+                </div>
+
+                <div>
+                  <label className="block text-[10px] uppercase font-mono tracking-widest text-gray-400 mb-1.5 flex justify-between items-center">
+                    <span>Solution (Markdown)</span>
+                    <div className="flex gap-2">
+                      <input type="file" accept=".md,.txt" ref={mdInputRef} onChange={handleMdImport} className="hidden" />
+                      <input type="file" accept="image/*" ref={imgInputRef} onChange={handleImageInsert} className="hidden" />
+                      
+                      <button type="button" onClick={() => mdInputRef.current?.click()} className="flex items-center gap-1 text-[9px] bg-cyan-900/30 hover:bg-cyan-500/30 text-cyan-400 px-2 py-1 rounded border border-cyan-500/30 transition-colors shadow-[0_0_8px_rgba(6,182,212,0.1)] hover:shadow-[0_0_12px_rgba(6,182,212,0.4)]">
+                        <Upload className="w-3 h-3" /> 导入 .MD
+                      </button>
+                      <button type="button" onClick={() => imgInputRef.current?.click()} className="flex items-center gap-1 text-[9px] bg-purple-900/30 hover:bg-purple-500/30 text-purple-400 px-2 py-1 rounded border border-purple-500/30 transition-colors shadow-[0_0_8px_rgba(168,85,247,0.1)] hover:shadow-[0_0_12px_rgba(168,85,247,0.4)]">
+                        <ImageIcon className="w-3 h-3" /> 贴图
+                      </button>
+                    </div>
+                  </label>
+                  <textarea
+                    placeholder="在这里记录你的解题思路、转移方程或核心代码..."
+                    value={formData.solution}
+                    onChange={e => setFormData({...formData, solution: e.target.value})}
+                    className="w-full h-28 bg-black/50 border border-white/10 rounded-lg px-3 py-3 text-sm focus:outline-none focus:border-cyan-500 focus:ring-1 focus:ring-cyan-500/50 text-gray-300 placeholder-gray-600 font-mono transition-all resize-none custom-scrollbar leading-relaxed"
+                  />
+                </div>
+
+                <div>
+                  <label className="block text-[10px] uppercase font-mono tracking-widest text-gray-400 mb-2">Status</label>
+                  <div className="grid grid-cols-3 gap-2">
+                    {STATUSES.map(s => (
+                      <button
+                        key={s}
+                        type="button"
+                        onClick={() => setFormData({...formData, status: s})}
+                        className={`py-2 text-xs font-bold rounded-lg border transition-all duration-300 font-mono ${
+                          formData.status === s 
+                            ? `${getStatusColor(s)}`
+                            : 'bg-black/30 border-white/5 text-gray-500 hover:border-gray-600 hover:bg-white/5'
+                        }`}
+                      >
+                        {s}
+                      </button>
+                    ))}
+                  </div>
+                </div>
+
+                <button 
+                  type="submit"
+                  className="w-full relative overflow-hidden group bg-cyan-600/20 border border-cyan-500/50 hover:bg-cyan-500 text-cyan-400 hover:text-white font-black py-3.5 rounded-lg transition-all duration-300 shadow-[0_0_15px_rgba(6,182,212,0.2)] hover:shadow-[0_0_30px_rgba(6,182,212,0.6)] mt-2 active:scale-[0.98]"
+                >
+                  <span className="relative z-10 flex items-center justify-center gap-2 tracking-widest uppercase text-sm">
+                    Commit Record
+                  </span>
+                </button>
+              </form>
+            </div>
+          </div>
+
+          {/* Right Column: Search & Data Flow */}
+          <div className="lg:col-span-2 flex flex-col gap-6">
+            
+            {/* Search Module */}
+            <div className="bg-[#0b0e14]/80 backdrop-blur-xl border border-white/10 rounded-2xl p-2 pl-4 flex items-center gap-3 shadow-lg focus-within:border-cyan-500/50 focus-within:shadow-[0_0_20px_rgba(6,182,212,0.15)] transition-all">
+              <Search className="w-5 h-5 text-cyan-500/70" />
+              <input
+                type="text"
+                placeholder="Query by Problem, Tags, Platform..."
+                value={searchQuery}
+                onChange={(e) => setSearchQuery(e.target.value)}
+                className="bg-transparent border-none focus:outline-none text-white font-mono w-full placeholder-gray-600 text-sm"
+              />
+              {searchQuery && (
+                <div className="pr-2 flex items-center gap-2">
+                  <span className="text-[10px] font-mono font-bold bg-cyan-500/20 text-cyan-300 px-2.5 py-1 rounded border border-cyan-500/30 whitespace-nowrap uppercase tracking-wider">
+                    {filteredRecords.length} Match
+                  </span>
+                  <button onClick={() => setSearchQuery('')} className="p-1 text-gray-500 hover:text-white transition-colors">
+                    <X className="w-4 h-4" />
+                  </button>
+                </div>
+              )}
+            </div>
+
+            {/* Terminal View Table */}
+            <div className="bg-[#0b0e14]/80 backdrop-blur-xl border border-white/10 rounded-2xl overflow-hidden flex-1 shadow-2xl relative flex flex-col">
+              <div className="p-4 border-b border-white/5 flex justify-between items-center bg-black/40">
+                <h2 className="text-[13px] uppercase tracking-widest font-black font-mono text-gray-300 flex items-center gap-2">
+                  <CalendarDays className="w-4 h-4 text-purple-400" />
+                  Data Stream Log
+                </h2>
+              </div>
+              
+              <div className="overflow-x-auto flex-1 custom-scrollbar">
+                <table className="w-full text-left text-sm whitespace-nowrap">
+                  <thead className="bg-black/60 text-cyan-500/60 text-[10px] font-mono uppercase tracking-[0.2em]">
+                    <tr>
+                      <th className="px-5 py-4 font-normal">Timestamp</th>
+                      <th className="px-5 py-4 font-normal">Entity</th>
+                      <th className="px-5 py-4 font-normal">Rating</th>
+                      <th className="px-5 py-4 font-normal">Tags</th>
+                      <th className="px-5 py-4 font-normal">Status</th>
+                      <th className="px-5 py-4 text-center font-normal">Solution</th>
+                    </tr>
+                  </thead>
+                  <tbody className="divide-y divide-white/5">
+                    {filteredRecords.length === 0 ? (
+                      <tr>
+                        <td colSpan="6" className="px-5 py-24 text-center">
+                          <p className="text-gray-500 font-mono tracking-widest uppercase">[ 0 Data Blocks Found ]</p>
+                        </td>
+                      </tr>
+                    ) : (
+                      filteredRecords.map(record => (
+                        <tr key={record.id} className="hover:bg-white/5 transition-colors group">
+                          <td className="px-5 py-4 text-gray-500 font-mono text-xs">{record.date}</td>
+                          <td className="px-5 py-4">
+                            <div className="flex flex-col">
+                              <span className="font-bold text-gray-200 group-hover:text-cyan-300 transition-colors tracking-wide">{record.problemId}</span>
+                              <span className="text-[10px] text-gray-500 font-mono mt-0.5">{record.platform}</span>
+                            </div>
+                          </td>
+                          <td className="px-5 py-4">
+                            <span className={`px-2 py-0.5 rounded text-xs font-bold font-mono border ${
+                              record.rating >= 2000 ? 'bg-red-500/10 text-red-400 border-red-500/30 shadow-[0_0_8px_rgba(239,68,68,0.2)]' : 
+                              record.rating >= 1600 ? 'bg-purple-500/10 text-purple-400 border-purple-500/30 shadow-[0_0_8px_rgba(168,85,247,0.2)]' : 
+                              record.rating >= 1200 ? 'bg-cyan-500/10 text-cyan-400 border-cyan-500/30' : 'bg-gray-800 border-gray-700 text-gray-300'
+                            }`}>
+                              {record.rating ? `R-${record.rating}` : 'N/A'}
+                            </span>
+                          </td>
+                          <td className="px-5 py-4">
+                            <div className="flex flex-wrap gap-1.5 max-w-[200px] whitespace-normal">
+                              {record.tags ? record.tags.split(',').map((tag, i) => (
+                                <span key={i} className="px-1.5 py-0.5 bg-cyan-900/10 border border-cyan-500/20 rounded text-[10px] text-cyan-300/80 font-mono uppercase tracking-wider">
+                                  {tag.trim()}
+                                </span>
+                              )) : <span className="text-gray-600 text-xs">-</span>}
+                            </div>
+                          </td>
+                          <td className="px-5 py-4">
+                            <span className={`px-2 py-1 border rounded text-[10px] uppercase font-black tracking-widest font-mono ${getStatusColor(record.status)}`}>
+                              {record.status}
+                            </span>
+                          </td>
+                          <td className="px-5 py-4 text-center">
+                            <button
+                              onClick={() => setSelectedRecord(record)}
+                              className={`inline-flex items-center justify-center p-2 rounded-xl transition-all duration-300 ${
+                                record.solution 
+                                ? 'bg-purple-500/10 text-purple-400 hover:bg-purple-500/30 hover:text-purple-200 border border-purple-500/30 hover:shadow-[0_0_15px_rgba(168,85,247,0.4)]' 
+                                : 'bg-white/5 text-gray-500 hover:bg-white/10 hover:text-gray-300 border border-transparent'
+                              }`}
+                              title={record.solution ? "查看题解" : "无题解内容"}
+                            >
+                              <FileText className="w-4 h-4" />
+                            </button>
+                          </td>
+                        </tr>
+                      ))
+                    )}
+                  </tbody>
+                </table>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      {/* 沉浸式题解面板 (The Immersive Modal) */}
+      {selectedRecord && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 sm:p-6 md:p-12 animate-in fade-in zoom-in-95 duration-300">
+          
+          {/* 超高清暗黑赛博朋克背景图 & 毛玻璃层 */}
+          <div 
+            className="absolute inset-0 bg-cover bg-center brightness-[0.3] contrast-125 transition-all duration-700"
+            style={{ backgroundImage: 'url("https://images.unsplash.com/photo-1614729939124-032f0b56c9ce?q=80&w=2000&auto=format&fit=crop")' }}
+          ></div>
+          <div className="absolute inset-0 bg-black/40 backdrop-blur-md"></div>
+          
+          {/* Main Modal Card */}
+          <div className="relative w-full max-w-4xl max-h-full bg-[#0a0a0f]/80 backdrop-blur-2xl border border-cyan-500/30 rounded-2xl shadow-[0_0_50px_rgba(6,182,212,0.15)] flex flex-col overflow-hidden ring-1 ring-white/10">
+            
+            {/* Header / Top Bar */}
+            <div className="flex items-start md:items-center justify-between p-6 border-b border-white/10 bg-gradient-to-r from-cyan-900/30 to-transparent">
+              <div className="flex items-start gap-4">
+                <div className="bg-black/50 p-2.5 rounded-xl border border-white/10 shadow-inner">
+                  <Code2 className="w-6 h-6 text-cyan-400 drop-shadow-[0_0_8px_currentColor]" />
+                </div>
+                <div>
+                  <h3 className="text-2xl font-black text-white tracking-wide drop-shadow-md">
+                    {selectedRecord.platform} - {selectedRecord.problemId}
+                  </h3>
+                  <div className="flex flex-wrap items-center gap-3 mt-2 text-[10px] font-mono uppercase tracking-widest text-gray-400">
+                    <span className="flex items-center gap-1 bg-black/30 px-2 py-1 rounded border border-white/5">
+                      <CalendarDays className="w-3 h-3" /> {selectedRecord.date}
+                    </span>
+                    <span className={`px-2 py-1 rounded border ${getStatusColor(selectedRecord.status)}`}>
+                      {selectedRecord.status}
+                    </span>
+                    {selectedRecord.rating && (
+                      <span className="text-amber-400 border border-amber-400/30 px-2 py-1 rounded bg-amber-400/10 drop-shadow-[0_0_5px_rgba(251,191,36,0.3)]">
+                        RATING: {selectedRecord.rating}
+                      </span>
+                    )}
+                  </div>
+                </div>
+              </div>
+              <button 
+                onClick={() => setSelectedRecord(null)}
+                className="p-2.5 text-gray-500 hover:text-white hover:bg-white/10 rounded-xl transition-all bg-black/30 border border-white/5 hover:border-white/20"
+              >
+                <X className="w-5 h-5" />
+              </button>
+            </div>
+
+            {/* Tags Banner */}
+            {selectedRecord.tags && (
+              <div className="px-6 py-3 bg-black/40 border-b border-white/5 flex flex-wrap gap-2">
+                <Tag className="w-4 h-4 text-cyan-500/70 mr-1" />
+                {selectedRecord.tags.split(',').map((tag, i) => (
+                  <span key={i} className="px-2 py-0.5 bg-cyan-900/20 border border-cyan-500/30 text-cyan-300 rounded text-xs font-mono uppercase tracking-wide">
+                    {tag.trim()}
+                  </span>
+                ))}
+              </div>
+            )}
+
+            {/* Markdown Body Viewer */}
+            <div className="p-6 md:p-8 overflow-y-auto flex-1 custom-scrollbar relative">
+              <div className="absolute -left-[1px] top-8 bottom-8 w-1 bg-gradient-to-b from-cyan-500 via-purple-500 to-transparent rounded-r-full opacity-50 shadow-[0_0_10px_rgba(6,182,212,0.5)]"></div>
+              
+              <div className="pl-6 text-gray-300">
+                {!selectedRecord.solution ? (
+                  <div className="h-full flex flex-col items-center justify-center text-gray-600 font-mono tracking-widest mt-20">
+                    <Terminal className="w-12 h-12 mb-4 opacity-20" />
+                    <p>[ SYSTEM.WARN: EMPTY_SOLUTION_DATA ]</p>
+                  </div>
+                ) : (
+                  <div className="whitespace-pre-wrap font-mono text-[13px] md:text-sm leading-relaxed tracking-tight break-words">
+                    {selectedRecord.solution.split('\n').map((line, idx) => {
+                      if (line.startsWith('# ')) return <h1 key={idx} className="text-2xl font-black text-white mt-6 mb-4 pb-2 border-b border-white/10 tracking-wider drop-shadow-[0_0_8px_rgba(255,255,255,0.2)]">{line.replace('# ', '')}</h1>;
+                      if (line.startsWith('## ')) return <h2 key={idx} className="text-xl font-bold text-cyan-50 mt-5 mb-3">{line.replace('## ', '')}</h2>;
+                      if (line.startsWith('> ')) return <blockquote key={idx} className="border-l-2 border-cyan-500 pl-4 py-1 my-3 bg-cyan-500/10 text-cyan-200 italic rounded-r-lg">{line.replace('> ', '')}</blockquote>;
+                      if (line.startsWith('```')) return <div key={idx} className="my-2 h-2"></div>; 
+                      if (line.match(/^[-*] /)) return <li key={idx} className="ml-4 list-disc text-gray-300 marker:text-cyan-500">{line.substring(2)}</li>;
+                      
+                      // 内联渲染 Base64 图片或普通外链图片
+                      if (line.includes('![')) {
+                        const parts = line.split(/(!\[.*?\]\(.*?\))/g);
+                        return (
+                          <p key={idx} className="min-h-[1.5em] text-gray-300/90 my-2">
+                            {parts.map((part, i) => {
+                              const match = part.match(/!\[(.*?)\]\((.*?)\)/);
+                              if (match) {
+                                return <img key={i} src={match[2]} alt={match[1]} className="max-w-full rounded-xl border border-cyan-500/30 shadow-[0_0_20px_rgba(6,182,212,0.15)] my-4 max-h-[400px] object-contain bg-black/50" loading="lazy" />;
+                              }
+                              return <span key={i}>{part}</span>;
+                            })}
+                          </p>
+                        );
+                      }
+
+                      return <p key={idx} className="min-h-[1.5em] text-gray-300/90">{line}</p>;
+                    })}
+                  </div>
+                )}
+              </div>
+            </div>
+            
+            {/* Modal Footer */}
+            <div className="p-4 bg-black/60 border-t border-white/10 text-right">
+              <p className="text-[10px] text-gray-500 font-mono uppercase tracking-widest">
+                Data Instance ID: {selectedRecord.id}
+              </p>
+            </div>
+          </div>
+        </div>
+      )}
+    </div>
+  );
+}
