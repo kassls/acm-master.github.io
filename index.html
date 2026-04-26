@@ -16,14 +16,17 @@
     import { createRoot } from 'https://esm.sh/react-dom@18.2.0/client';
     import { 
       Code2, CheckCircle2, Clock, CalendarDays, Tag, Plus, 
-      Target, Trophy, Search, FileText, X, Terminal, Sparkles, Upload, ImageIcon
+      Target, Trophy, Search, FileText, X, Terminal, Sparkles, Upload, ImageIcon, ImagePlus
     } from 'https://esm.sh/lucide-react@0.263.1';
+    // 引入安全的 Markdown 解析器
+    import { marked } from 'https://esm.sh/marked@9.1.2';
+    import DOMPurify from 'https://esm.sh/dompurify@3.0.6';
 
-    // 初始化模拟数据
+    // 初始化模拟数据，包含一些 Markdown 语法供测试
     const initialRecords = [
       { 
         id: '1', date: new Date().toISOString().split('T')[0], platform: 'Codeforces', problemId: '1945C', rating: 1400, tags: 'math, greedy', status: 'AC',
-        solution: '# 核心思路\n通过预处理前缀和，O(1) 判定左侧和右侧的 0/1 数量。\n\n## 复杂度\n- 时间: O(N)\n- 空间: O(N)\n\n> 贪心即可，注意中心点的取整逻辑。'
+        solution: '# 核心思路\n通过预处理前缀和，O(1) 判定左侧和右侧的 0/1 数量。\n\n## 复杂度\n- **时间**: O(N)\n- **空间**: O(N)\n\n> 贪心即可，注意中心点的取整逻辑。'
       },
       { 
         id: '2', date: new Date().toISOString().split('T')[0], platform: 'AtCoder', problemId: 'ABC345-D', rating: 1200, tags: 'dp, bitmask', status: 'Upsolving',
@@ -31,7 +34,7 @@
       },
       { 
         id: '3', date: new Date(Date.now() - 86400000).toISOString().split('T')[0], platform: 'Luogu', problemId: 'P3372', rating: 1500, tags: 'segment tree', status: 'AC',
-        solution: '线段树模板题1。\n**易错点：**\n1. Lazy Tag 下传时，左右儿子的区间长度千万不能乘错。\n2. `build()` 的时候记得初始化 `tree[p]`。'
+        solution: '线段树模板题1。\n\n### 易错点\n1. Lazy Tag 下传时，左右儿子的区间长度千万不能乘错。\n2. `build()` 的时候记得初始化 `tree[p]`。'
       }
     ];
 
@@ -77,6 +80,7 @@
       const [records, setRecords] = useState(initialRecords);
       const [searchQuery, setSearchQuery] = useState('');
       const [selectedRecord, setSelectedRecord] = useState(null); 
+      const [readerBg, setReaderBg] = useState('https://images.unsplash.com/photo-1614729939124-032f0b56c9ce?q=80&w=2000&auto=format&fit=crop'); 
       
       const [formData, setFormData] = useState({
         date: new Date().toISOString().split('T')[0],
@@ -116,6 +120,17 @@
         };
         reader.readAsDataURL(file);
         e.target.value = null;
+      };
+
+      const handleReaderBgUpload = (e) => {
+        const file = e.target.files[0];
+        if (!file) return;
+        const reader = new FileReader();
+        reader.onload = (event) => {
+          setReaderBg(event.target.result);
+        };
+        reader.readAsDataURL(file);
+        e.target.value = null; 
       };
 
       const stats = useMemo(() => {
@@ -161,22 +176,46 @@
       return (
         <div className="min-h-screen bg-[#07090e] text-gray-200 font-sans relative overflow-hidden selection:bg-cyan-500/30">
           <style dangerouslySetInnerHTML={{__html: `
-            @import url('https://fonts.googleapis.com/css2?family=Rajdhani:wght@500;700;900&family=Fira+Code:wght@400;600&display=swap');
+            @import url('https://fonts.googleapis.com/css2?family=Noto+Serif+SC:wght@700;900&family=Rajdhani:wght@500;700;900&family=Fira+Code:wght@400;600&display=swap');
             .font-sci-fi { font-family: 'Rajdhani', sans-serif; }
+            .font-xuanhuan { font-family: 'Noto Serif SC', serif; }
             ::-webkit-scrollbar { width: 6px; height: 6px; }
             ::-webkit-scrollbar-track { background: rgba(0, 0, 0, 0.2); border-radius: 10px; }
             ::-webkit-scrollbar-thumb { background: rgba(6, 182, 212, 0.3); border-radius: 10px; }
             ::-webkit-scrollbar-thumb:hover { background: rgba(6, 182, 212, 0.6); }
+            
             @keyframes count-up-glow {
               0% { text-shadow: 0 0 0px rgba(6,182,212,0); transform: scale(1); filter: brightness(1); }
               50% { text-shadow: 0 0 25px rgba(6,182,212,1); transform: scale(1.15); filter: brightness(1.5); }
               100% { text-shadow: 0 0 10px rgba(6,182,212,0.5); transform: scale(1); filter: brightness(1); }
             }
             .animate-count-glow { animation: count-up-glow 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275) forwards; }
-            @keyframes progress-stripes { 0% { background-position: 0 0; } 100% { background-position: 40px 0; } }
-            @keyframes gradient-flow { 0% { background-position: 0% 50%; } 50% { background-position: 100% 50%; } 100% { background-position: 0% 50%; } }
-            .energy-bar-stripes { background-image: linear-gradient(45deg, rgba(255,255,255,0.2) 25%, transparent 25%, transparent 50%, rgba(255,255,255,0.2) 50%, rgba(255,255,255,0.2) 75%, transparent 75%, transparent); background-size: 40px 40px; animation: progress-stripes 1s linear infinite; }
-            .bg-ascended-flow { background: linear-gradient(90deg, #d946ef, #8b5cf6, #06b6d4, #f59e0b, #d946ef); background-size: 300% 100%; animation: gradient-flow 3s ease infinite; }
+            
+            /* 玄幻阵法灵石呼吸动画 */
+            @keyframes spirit-breathe {
+              0%, 100% { filter: brightness(1); transform: scale(1); }
+              50% { filter: brightness(1.3); transform: scale(1.15); }
+            }
+            .animate-spirit { animation: spirit-breathe 2.5s ease-in-out infinite; }
+
+            /* 机甲风 Markdown 渲染样式 */
+            .markdown-body { font-family: 'Fira Code', monospace, sans-serif; line-height: 1.6; font-size: 14px; color: #d1d5db; }
+            .markdown-body h1, .markdown-body h2, .markdown-body h3 { color: #fff; font-weight: 800; margin-top: 1.8em; margin-bottom: 0.8em; border-bottom: 1px solid rgba(6, 182, 212, 0.2); padding-bottom: 0.3em; }
+            .markdown-body h1 { font-size: 2em; color: #22d3ee; text-shadow: 0 0 12px rgba(34, 211, 238, 0.4); }
+            .markdown-body h2 { font-size: 1.5em; color: #e2e8f0; }
+            .markdown-body p { margin-bottom: 1em; }
+            .markdown-body a { color: #22d3ee; text-decoration: none; border-bottom: 1px solid transparent; transition: all 0.2s; }
+            .markdown-body a:hover { border-bottom-color: #22d3ee; text-shadow: 0 0 8px rgba(34,211,238,0.5); }
+            .markdown-body strong { font-weight: 700; color: #fff; }
+            .markdown-body ul, .markdown-body ol { margin-bottom: 1em; padding-left: 1.5em; }
+            .markdown-body ul { list-style-type: disc; }
+            .markdown-body ul li::marker { color: #06b6d4; }
+            .markdown-body li + li { margin-top: 0.3em; }
+            .markdown-body code { background-color: rgba(6, 182, 212, 0.1); border: 1px solid rgba(6, 182, 212, 0.3); padding: 0.15em 0.4em; border-radius: 4px; font-size: 90%; color: #67e8f9; }
+            .markdown-body pre { background-color: #0d1117; padding: 1rem; overflow-x: auto; border-radius: 8px; border: 1px solid rgba(6, 182, 212, 0.3); margin-bottom: 1.2em; box-shadow: inset 0 0 10px rgba(0,0,0,0.5); }
+            .markdown-body pre code { background-color: transparent; border: none; padding: 0; color: #e5e7eb; font-size: 13px; }
+            .markdown-body blockquote { border-left: 4px solid #06b6d4; padding-left: 1em; margin: 1em 0; color: #9ca3af; background: linear-gradient(90deg, rgba(6,182,212,0.1), transparent); padding-block: 0.5em; border-radius: 0 8px 8px 0; }
+            .markdown-body img { max-width: 100%; border-radius: 8px; border: 1px solid rgba(6, 182, 212, 0.3); box-shadow: 0 0 20px rgba(6, 182, 212, 0.15); margin: 1em 0; background: rgba(0,0,0,0.5); }
           `}} />
 
           <div className="absolute top-[-15%] left-[-10%] w-[50%] h-[50%] bg-cyan-600/10 rounded-full blur-[150px] pointer-events-none"></div>
@@ -206,6 +245,7 @@
             <div className="space-y-4">
               <div className="relative w-full bg-[#040609]/90 backdrop-blur-2xl border-2 border-cyan-500/40 rounded-2xl p-6 md:p-8 shadow-[0_0_40px_rgba(6,182,212,0.15)] overflow-hidden group">
                 <div className="absolute inset-0 w-full h-[200%] bg-gradient-to-b from-transparent via-cyan-500/5 to-transparent animate-[scan-line_4s_linear_infinite] pointer-events-none"></div>
+                
                 <div className="flex flex-col md:flex-row items-start md:items-center justify-between gap-8 relative z-10">
                   <div className="flex items-center gap-5">
                     <div className="p-4 bg-cyan-900/40 border border-cyan-500/50 rounded-xl shadow-[0_0_25px_rgba(6,182,212,0.3)]">
@@ -224,15 +264,71 @@
                       </div>
                     </div>
                   </div>
-                  <div className="w-full md:w-[400px] flex flex-col gap-2 justify-center md:ml-6">
-                    <div className="flex justify-between text-xs font-sci-fi font-bold tracking-[0.15em] text-slate-400 uppercase">
-                      <span>Energy Power</span>
-                      <span className={stats.todayCount >= 5 ? 'text-fuchsia-400 drop-shadow-[0_0_8px_currentColor]' : 'text-cyan-400 drop-shadow-[0_0_8px_currentColor]'}>
-                        Target: 5
-                      </span>
+                  
+                  {/* === 赛博修仙玄幻风格：悬浮五行聚灵阵 (Cyber-Dao Spirit Array) === */}
+                  <div className="w-full md:w-auto flex items-center justify-start md:justify-center gap-5 md:ml-auto md:mr-8 mt-4 md:mt-0">
+                    <div className="text-left md:text-right flex flex-col items-start md:items-end">
+                      <p className="text-[10px] font-xuanhuan font-bold tracking-[0.3em] text-slate-400 mb-1">聚灵阵眼 / SPIRIT MATRIX</p>
+                      <p className={`text-sm font-black font-xuanhuan tracking-widest ${stats.todayCount >= 5 ? 'text-fuchsia-400 drop-shadow-[0_0_8px_rgba(217,70,239,0.8)]' : 'text-cyan-400 drop-shadow-[0_0_8px_rgba(34,211,238,0.8)]'}`}>
+                        {stats.todayCount >= 5 ? '大道圆满 (ASCENDED)' : `境界突破: ${stats.todayCount} / 5`}
+                      </p>
                     </div>
-                    <div className="w-full h-8 bg-black/30 backdrop-blur-md border border-slate-700 p-1" style={{ transform: 'skewX(-15deg)' }}>
-                      <div className={`h-full transition-all duration-1000 ease-out energy-bar-stripes ${stats.todayCount >= 5 ? 'bg-ascended-flow shadow-[0_0_25px_#d946ef]' : 'bg-gradient-to-r from-cyan-800 to-cyan-400 shadow-[0_0_15px_#06b6d4]'}`} style={{ width: `${Math.min((stats.todayCount / 5) * 100, 100)}%` }}></div>
+                    
+                    <div className="relative w-28 h-28 flex-shrink-0 ml-auto md:ml-0">
+                      {/* 旋转背景阵纹 (太极/五行阵法图) */}
+                      <svg className={`absolute inset-0 w-full h-full ${stats.todayCount >= 5 ? 'animate-[spin_4s_linear_infinite] text-fuchsia-500/60 drop-shadow-[0_0_15px_rgba(217,70,239,0.6)]' : 'animate-[spin_15s_linear_infinite] text-cyan-500/40'}`} viewBox="0 0 100 100">
+                        {/* 复杂玄幻阵纹线条 */}
+                        <circle cx="50" cy="50" r="48" fill="none" stroke="currentColor" strokeWidth="0.5" strokeDasharray="4 2 1 2" />
+                        <circle cx="50" cy="50" r="44" fill="none" stroke="currentColor" strokeWidth="1" />
+                        <circle cx="50" cy="50" r="28" fill="none" stroke="currentColor" strokeWidth="0.5" strokeDasharray="3 3" />
+                        {/* 正五芒星 */}
+                        <polygon points="50,6 91.8,36.4 75.8,85.6 24.2,85.6 8.2,36.4" fill="none" stroke="currentColor" strokeWidth="0.5" />
+                        {/* 倒五芒星交错形成十方护法阵 */}
+                        <polygon points="50,94 8.2,63.6 24.2,14.4 75.8,14.4 91.8,63.6" fill="none" stroke="currentColor" strokeWidth="0.5" opacity="0.4" />
+                      </svg>
+                      
+                      {/* 5个五行灵火节点 (金木水火土) */}
+                      {[...Array(5)].map((_, i) => {
+                        const active = stats.todayCount > i;
+                        const isMax = stats.todayCount >= 5;
+                        const angle = i * 72; // 沿圆周均匀分布的五行方位
+                        const runes = ['金', '木', '水', '火', '土'];
+                        
+                        return (
+                          <div 
+                            key={i} 
+                            className="absolute top-1/2 left-1/2 w-6 h-6 -mt-3 -ml-3 transition-all duration-1000 ease-[cubic-bezier(0.34,1.56,0.64,1)] z-10" 
+                            style={{ transform: `rotate(${angle}deg) translateY(-44px)` }}
+                          >
+                            <div 
+                              className={`w-full h-full rounded-full flex items-center justify-center transition-all duration-700 font-xuanhuan text-[11px] font-black ${
+                                active 
+                                  ? isMax 
+                                    ? 'bg-gradient-to-br from-fuchsia-200 to-fuchsia-400 text-fuchsia-950 shadow-[0_0_20px_rgba(217,70,239,1)] scale-110 animate-spirit' 
+                                    : 'bg-gradient-to-br from-cyan-100 to-cyan-400 text-cyan-950 shadow-[0_0_15px_rgba(34,211,238,0.8)] animate-spirit'
+                                  : 'bg-[#040609] text-slate-600 border border-slate-700/80 shadow-[inset_0_0_5px_rgba(0,0,0,1)]'
+                              }`} 
+                              // 抵消外层容器的旋转，保证符文文字永远垂直正立
+                              style={{ transform: `rotate(-${angle}deg)` }}
+                            >
+                              {runes[i]}
+                            </div>
+                          </div>
+                        );
+                      })}
+
+                      {/* 阵眼核心 (太极结晶) */}
+                      <div className="absolute inset-0 flex items-center justify-center z-20">
+                        <div className={`w-10 h-10 rounded-full flex items-center justify-center backdrop-blur-sm transition-all duration-700 ${
+                          stats.todayCount >= 5 
+                            ? 'bg-gradient-to-br from-fuchsia-400/30 to-purple-600/60 border-2 border-fuchsia-300 shadow-[0_0_30px_rgba(217,70,239,0.8),inset_0_0_15px_rgba(217,70,239,0.9)] animate-pulse' 
+                            : 'bg-black/60 border border-cyan-500/40 shadow-[inset_0_0_15px_rgba(34,211,238,0.4)]'
+                        }`}>
+                           <span className={`font-xuanhuan font-black text-xl drop-shadow-lg ${stats.todayCount >= 5 ? 'text-white' : 'text-cyan-100'}`}>
+                             {stats.todayCount}
+                           </span>
+                        </div>
+                      </div>
                     </div>
                   </div>
                 </div>
@@ -387,7 +483,7 @@
                                 <span className={`px-2 py-1 border rounded text-[10px] uppercase font-black tracking-widest font-mono ${getStatusColor(record.status)}`}>{record.status}</span>
                               </td>
                               <td className="px-5 py-4 text-center">
-                                <button onClick={() => setSelectedRecord(record)} className={`inline-flex items-center justify-center p-2 rounded-xl transition-all duration-300 ${record.solution ? 'bg-purple-500/10 text-purple-400 hover:bg-purple-500/30 hover:text-purple-200 border border-purple-500/30 hover:shadow-[0_0_15px_rgba(168,85,247,0.4)]' : 'bg-white/5 text-gray-500 hover:bg-white/10 hover:text-gray-300 border border-transparent'}`} title={record.solution ? "查看题解" : "无题解内容"}>
+                                <button onClick={() => setSelectedRecord(record)} className={`inline-flex items-center justify-center p-2 rounded-xl transition-all duration-300 ${record.solution ? 'bg-cyan-500/10 text-cyan-400 hover:bg-cyan-500/30 hover:text-cyan-200 border border-cyan-500/30 hover:shadow-[0_0_15px_rgba(34,211,238,0.4)]' : 'bg-white/5 text-gray-500 hover:bg-white/10 hover:text-gray-300 border border-transparent'}`} title={record.solution ? "打开全屏阅读器" : "无题解内容"}>
                                   <FileText className="w-4 h-4" />
                                 </button>
                               </td>
@@ -402,70 +498,76 @@
             </div>
           </div>
 
+          {/* 全屏 Markdown 阅读器 Modal */}
           {selectedRecord && (
-            <div className="fixed inset-0 z-50 flex items-center justify-center p-4 sm:p-6 md:p-12 animate-in fade-in zoom-in-95 duration-300">
-              <div className="absolute inset-0 bg-cover bg-center brightness-[0.3] contrast-125 transition-all duration-700" style={{ backgroundImage: 'url("https://images.unsplash.com/photo-1614729939124-032f0b56c9ce?q=80&w=2000&auto=format&fit=crop")' }}></div>
-              <div className="absolute inset-0 bg-black/40 backdrop-blur-md"></div>
+            <div className="fixed inset-0 z-50 flex flex-col animate-in fade-in zoom-in-95 duration-300 bg-black">
+              {/* 可更换的背景 */}
+              <div className="absolute inset-0 bg-cover bg-center transition-all duration-700" style={{ backgroundImage: `url("${readerBg}")` }}></div>
+              {/* 暗化遮罩，确保前台文字高对比度可读 */}
+              <div className="absolute inset-0 bg-[#07090e]/85 backdrop-blur-[4px]"></div>
               
-              <div className="relative w-full max-w-4xl max-h-full bg-[#0a0a0f]/80 backdrop-blur-2xl border border-cyan-500/30 rounded-2xl shadow-[0_0_50px_rgba(6,182,212,0.15)] flex flex-col overflow-hidden ring-1 ring-white/10">
-                <div className="flex items-start md:items-center justify-between p-6 border-b border-white/10 bg-gradient-to-r from-cyan-900/30 to-transparent">
-                  <div className="flex items-start gap-4">
-                    <div className="bg-black/50 p-2.5 rounded-xl border border-white/10 shadow-inner">
-                      <Code2 className="w-6 h-6 text-cyan-400 drop-shadow-[0_0_8px_currentColor]" />
-                    </div>
-                    <div>
-                      <h3 className="text-2xl font-black text-white tracking-wide drop-shadow-md">{selectedRecord.platform} - {selectedRecord.problemId}</h3>
-                      <div className="flex flex-wrap items-center gap-3 mt-2 text-[10px] font-mono uppercase tracking-widest text-gray-400">
-                        <span className="flex items-center gap-1 bg-black/30 px-2 py-1 rounded border border-white/5"><CalendarDays className="w-3 h-3" /> {selectedRecord.date}</span>
-                        <span className={`px-2 py-1 rounded border ${getStatusColor(selectedRecord.status)}`}>{selectedRecord.status}</span>
-                        {selectedRecord.rating && <span className="text-amber-400 border border-amber-400/30 px-2 py-1 rounded bg-amber-400/10 drop-shadow-[0_0_5px_rgba(251,191,36,0.3)]">RATING: {selectedRecord.rating}</span>}
-                      </div>
-                    </div>
+              {/* 顶部导航 */}
+              <div className="relative z-10 flex items-center justify-between p-4 md:px-8 border-b border-cyan-500/30 bg-black/40 backdrop-blur-md shadow-lg">
+                <div className="flex items-center gap-4">
+                  <div className="bg-black/50 p-2.5 rounded-xl border border-white/10 shadow-inner hidden md:block">
+                    <Code2 className="w-6 h-6 text-cyan-400 drop-shadow-[0_0_8px_currentColor]" />
                   </div>
-                  <button onClick={() => setSelectedRecord(null)} className="p-2.5 text-gray-500 hover:text-white hover:bg-white/10 rounded-xl transition-all bg-black/30 border border-white/5 hover:border-white/20"><X className="w-5 h-5" /></button>
-                </div>
-
-                {selectedRecord.tags && (
-                  <div className="px-6 py-3 bg-black/40 border-b border-white/5 flex flex-wrap gap-2">
-                    <Tag className="w-4 h-4 text-cyan-500/70 mr-1" />
-                    {selectedRecord.tags.split(',').map((tag, i) => <span key={i} className="px-2 py-0.5 bg-cyan-900/20 border border-cyan-500/30 text-cyan-300 rounded text-xs font-mono uppercase tracking-wide">{tag.trim()}</span>)}
-                  </div>
-                )}
-
-                <div className="p-6 md:p-8 overflow-y-auto flex-1 custom-scrollbar relative">
-                  <div className="absolute -left-[1px] top-8 bottom-8 w-1 bg-gradient-to-b from-cyan-500 via-purple-500 to-transparent rounded-r-full opacity-50 shadow-[0_0_10px_rgba(6,182,212,0.5)]"></div>
-                  <div className="pl-6 text-gray-300">
-                    {!selectedRecord.solution ? (
-                      <div className="h-full flex flex-col items-center justify-center text-gray-600 font-mono tracking-widest mt-20"><Terminal className="w-12 h-12 mb-4 opacity-20" /><p>[ SYSTEM.WARN: EMPTY_SOLUTION_DATA ]</p></div>
-                    ) : (
-                      <div className="whitespace-pre-wrap font-mono text-[13px] md:text-sm leading-relaxed tracking-tight break-words">
-                        {selectedRecord.solution.split('\n').map((line, idx) => {
-                          if (line.startsWith('# ')) return <h1 key={idx} className="text-2xl font-black text-white mt-6 mb-4 pb-2 border-b border-white/10 tracking-wider drop-shadow-[0_0_8px_rgba(255,255,255,0.2)]">{line.replace('# ', '')}</h1>;
-                          if (line.startsWith('## ')) return <h2 key={idx} className="text-xl font-bold text-cyan-50 mt-5 mb-3">{line.replace('## ', '')}</h2>;
-                          if (line.startsWith('> ')) return <blockquote key={idx} className="border-l-2 border-cyan-500 pl-4 py-1 my-3 bg-cyan-500/10 text-cyan-200 italic rounded-r-lg">{line.replace('> ', '')}</blockquote>;
-                          if (line.startsWith('```')) return <div key={idx} className="my-2 h-2"></div>; 
-                          if (line.match(/^[-*] /)) return <li key={idx} className="ml-4 list-disc text-gray-300 marker:text-cyan-500">{line.substring(2)}</li>;
-                          if (line.includes('![')) {
-                            const parts = line.split(/(!\[.*?\]\(.*?\))/g);
-                            return (
-                              <p key={idx} className="min-h-[1.5em] text-gray-300/90 my-2">
-                                {parts.map((part, i) => {
-                                  const match = part.match(/!\[(.*?)\]\((.*?)\)/);
-                                  if (match) return <img key={i} src={match[2]} alt={match[1]} className="max-w-full rounded-xl border border-cyan-500/30 shadow-[0_0_20px_rgba(6,182,212,0.15)] my-4 max-h-[400px] object-contain bg-black/50" loading="lazy" />;
-                                  return <span key={i}>{part}</span>;
-                                })}
-                              </p>
-                            );
-                          }
-                          return <p key={idx} className="min-h-[1.5em] text-gray-300/90">{line}</p>;
-                        })}
-                      </div>
-                    )}
+                  <div>
+                    <h3 className="text-xl md:text-2xl font-black text-white tracking-wide drop-shadow-md">
+                      {selectedRecord.platform} - {selectedRecord.problemId}
+                    </h3>
+                    <div className="flex gap-3 text-[10px] md:text-xs font-mono uppercase tracking-widest text-cyan-400 mt-1">
+                      <span>{selectedRecord.date}</span>
+                      <span className="text-white/40">|</span>
+                      <span className={selectedRecord.status === 'AC' ? 'text-green-400 drop-shadow-[0_0_5px_rgba(74,222,128,0.5)]' : 'text-amber-400'}>{selectedRecord.status}</span>
+                      {selectedRecord.rating && (
+                        <>
+                          <span className="text-white/40">|</span>
+                          <span className="text-purple-400">R-{selectedRecord.rating}</span>
+                        </>
+                      )}
+                    </div>
                   </div>
                 </div>
                 
-                <div className="p-4 bg-black/60 border-t border-white/10 text-right">
-                  <p className="text-[10px] text-gray-500 font-mono uppercase tracking-widest">Data Instance ID: {selectedRecord.id}</p>
+                <div className="flex items-center gap-3 md:gap-5">
+                  <label className="cursor-pointer flex items-center gap-2 px-3 py-2 rounded-lg bg-cyan-900/40 border border-cyan-500/40 text-cyan-300 text-xs font-mono uppercase hover:bg-cyan-500/30 transition-all shadow-[0_0_10px_rgba(6,182,212,0.1)] hover:shadow-[0_0_15px_rgba(6,182,212,0.4)]">
+                    <input type="file" accept="image/*" className="hidden" onChange={handleReaderBgUpload} />
+                    <ImagePlus className="w-4 h-4" /> <span className="hidden md:inline">Cover Override</span>
+                  </label>
+                  <button onClick={() => setSelectedRecord(null)} className="p-2 text-gray-400 hover:text-white bg-black/50 hover:bg-red-500/20 hover:border-red-500/50 rounded-lg border border-white/10 transition-all">
+                    <X className="w-6 h-6" />
+                  </button>
+                </div>
+              </div>
+
+              {/* MD 渲染主内容区域 */}
+              <div className="relative z-10 flex-1 overflow-y-auto custom-scrollbar p-4 md:p-8 lg:p-12">
+                <div className="max-w-5xl mx-auto bg-black/40 border border-cyan-500/20 rounded-2xl p-6 md:p-10 lg:p-14 shadow-[0_0_40px_rgba(0,0,0,0.6)] backdrop-blur-sm min-h-full">
+                  {/* Tags */}
+                  {selectedRecord.tags && (
+                    <div className="mb-8 flex flex-wrap gap-2 border-b border-white/10 pb-6">
+                      <Tag className="w-4 h-4 text-cyan-500 mr-2 mt-0.5" />
+                      {selectedRecord.tags.split(',').map((tag, i) => (
+                        <span key={i} className="px-3 py-1 bg-cyan-900/30 border border-cyan-500/40 text-cyan-200 rounded text-xs font-mono uppercase tracking-wider">
+                          {tag.trim()}
+                        </span>
+                      ))}
+                    </div>
+                  )}
+
+                  {/* 经过安全消毒的 marked 渲染引擎输出 */}
+                  {selectedRecord.solution ? (
+                    <div 
+                      className="markdown-body" 
+                      dangerouslySetInnerHTML={{ __html: DOMPurify.sanitize(marked.parse(selectedRecord.solution)) }} 
+                    />
+                  ) : (
+                    <div className="h-40 flex flex-col items-center justify-center text-gray-600 font-mono tracking-widest mt-10">
+                      <Terminal className="w-12 h-12 mb-4 opacity-20" />
+                      <p>[ SYSTEM.WARN: EMPTY_SOLUTION_DATA ]</p>
+                    </div>
+                  )}
                 </div>
               </div>
             </div>
