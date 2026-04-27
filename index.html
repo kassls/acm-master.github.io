@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>CP Core Tracker</title>
+  <title>青云白霓</title>
   
   <!-- Tailwind CSS -->
   <script src="https://cdn.tailwindcss.com"></script>
@@ -41,8 +41,8 @@
     // ==========================================
     // ⬇️ 小白配置区：把你的 JSONBin ID 和 Key 填在这里 ⬇️
     // ==========================================
-    const BIN_ID = "69ee2d8eaaba8821973cecc7"; 
-    const API_KEY = "$2a$10$uDYRchCWaDhDRB7L/qPfdODGDB3omHfsGaVHijWGfUr6vhKTNzi8y";
+    const BIN_ID = "把你的BIN_ID粘贴在这里"; 
+    const API_KEY = "把你的API_KEY粘贴在这里";
     
     // 检测是否配置了云端 (如果没填，就是离线模式)
     const isCloudEnabled = BIN_ID && !BIN_ID.includes("粘贴在这里") && API_KEY && !API_KEY.includes("粘贴在这里");
@@ -280,17 +280,24 @@
         if (isCloudEnabled) {
             setIsSyncing(true);
             try {
-                await fetch(`https://api.jsonbin.io/v3/b/${BIN_ID}`, {
+                const res = await fetch(`https://api.jsonbin.io/v3/b/${BIN_ID}`, {
                     method: 'PUT',
                     headers: {
                         'Content-Type': 'application/json',
-                        'X-Master-Key': API_KEY
+                        'X-Master-Key': API_KEY,
+                        'X-Bin-Versioning': 'false' // 优化：不产生多余的历史版本文件
                     },
                     body: JSON.stringify(updatedRecords)
                 });
+                
+                // 如果保存被拒绝，抛出错误
+                if (!res.ok) {
+                    const errData = await res.json();
+                    throw new Error(errData.message || "云端拒绝保存");
+                }
             } catch (err) {
                 console.error("数据保存失败:", err);
-                alert("云端保存失败，请检查网络或配置。");
+                alert("❌ 云端保存失败！\n原因: " + err.message + "\n可能是 API_KEY 填错了或网络波动。");
             } finally {
                 setIsSyncing(false);
             }
